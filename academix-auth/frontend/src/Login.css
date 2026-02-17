@@ -1,0 +1,109 @@
+/* ===== Background Animation ===== */
+.login-page {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle at 30% 30%, #7a0000, #1a0000 60%);
+  font-family: 'Segoe UI', sans-serif;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Animated Glow */
+.login-page::before {
+  content: "";
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: rgba(255, 0, 0, 0.15);
+  border-radius: 50%;
+  filter: blur(120px);
+  animation: glowMove 8s infinite alternate ease-in-out;
+}
+
+@keyframes glowMove {
+  from {
+    transform: translate(-100px, -100px);
+  }
+  to {
+    transform: translate(100px, 100px);
+  }
+}
+
+/* ===== Card ===== */
+.login-card {
+  width: 420px;
+  padding: 50px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  animation: fadeInUp 1s ease forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== Logo Section ===== */
+.logo-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px auto;
+  border-radius: 20px;
+  background: #ff2e2e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: bold;
+  color: white;
+  box-shadow: 0 10px 30px rgba(255, 0, 0, 0.5);
+}
+
+.logo-box h1 {
+  color: white;
+  margin-bottom: 10px;
+  font-size: 36px;
+}
+
+.logo-box p {
+  color: #cccccc;
+  margin-bottom: 40px;
+  font-size: 15px;
+}
+
+/* ===== Google Button ===== */
+.google-btn {
+  width: 100%;
+  padding: 15px;
+  border-radius: 14px;
+  border: none;
+  background-color: #ff2e2e;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+}
+
+.google-btn:hover {
+  background-color: #ff0000;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(255, 0, 0, 0.4);
+}
+
+.google-btn svg {
+  width: 20px;
+  height: 20px;
+}

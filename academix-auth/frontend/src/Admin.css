@@ -1,0 +1,287 @@
+/* =========================
+   Layout Structure
+========================= */
+
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  font-family: 'Segoe UI', sans-serif;
+  background: radial-gradient(circle at 20% 20%, #7a0000, #140000 60%);
+  color: white;
+}
+
+/* =========================
+   Sidebar
+========================= */
+
+.admin-sidebar {
+  width: 240px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(20px);
+  padding: 40px 20px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-sidebar .brand {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 45px;
+}
+
+.admin-sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.admin-sidebar li {
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.25s ease;
+  font-size: 14px;
+}
+
+.admin-sidebar li:hover,
+.admin-sidebar li.active {
+  background: #ff2e2e;
+}
+
+/* =========================
+   Main Content (Feed Style)
+========================= */
+
+.admin-main {
+  flex: 1;
+  padding: 30px 20px;
+  display: flex;
+  justify-content: center;
+}
+
+/* Feed width tighter */
+.admin-main > .card {
+  width: 100%;
+  max-width: 720px;
+}
+
+/* =========================
+   Card Container
+========================= */
+
+.card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(25px);
+  padding: 24px;
+  border-radius: 18px;
+  margin-bottom: 30px;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.55);
+}
+
+/* =========================
+   Announcement Header
+========================= */
+
+.announcement-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.announcement-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.announcement-header button {
+  padding: 7px 16px;
+  border-radius: 8px;
+  background: #ff2e2e;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  transition: 0.25s ease;
+}
+
+.announcement-header button:hover {
+  background: #ff0000;
+}
+
+/* =========================
+   Announcement Feed
+========================= */
+
+.announcement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.announcement-card {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 14px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: 0.25s ease;
+}
+
+.announcement-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
+}
+
+/* Title */
+
+.announcement-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* Image */
+
+.announcement-image {
+  width: 100%;
+  max-height: 280px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin: 10px 0 12px 0;
+}
+
+/* Description */
+
+.announcement-card p {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #ddd;
+  margin-bottom: 8px;
+}
+
+/* Date */
+
+.announcement-card small {
+  font-size: 11px;
+  opacity: 0.6;
+  letter-spacing: 0.4px;
+}
+
+/* =========================
+   Empty State
+========================= */
+
+.empty-text {
+  opacity: 0.6;
+  font-size: 13px;
+}
+
+/* =========================
+   Inputs
+========================= */
+
+input,
+select,
+textarea {
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  outline: none;
+  font-size: 13px;
+}
+
+textarea {
+  width: 100%;
+  min-height: 100px;
+  resize: none;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #bbb;
+}
+
+/* =========================
+   Modal Overlay
+========================= */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* =========================
+   Modal Box (Tighter)
+========================= */
+
+.modal-box {
+  background: #1c0f0f;
+  width: 420px;
+  max-width: 92%;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-box h2 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Date Row */
+
+.date-row {
+  display: flex;
+  gap: 10px;
+}
+
+.date-row input {
+  flex: 1;
+}
+
+/* =========================
+   Modal Buttons
+========================= */
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.modal-actions button {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.modal-actions button:first-child {
+  background: #ff2e2e;
+  color: white;
+}
+
+.modal-actions button:first-child:hover {
+  background: #ff0000;
+}
+
+.cancel-btn {
+  background: #333;
+  color: white;
+}
+
+.cancel-btn:hover {
+  background: #555;
+}

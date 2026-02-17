@@ -1,0 +1,152 @@
+body {
+  margin: 0;
+  background: #0f0f0f;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.app-container {
+  color: white;
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
+
+.top-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px;
+}
+
+.feed-container {
+  padding: 0 20px;
+}
+
+.announcement-card {
+  background: #1c1c1c;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.card-header {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  background: #ff3b3b;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.floating-btn {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #ff3b3b;
+  border: none;
+  color: white;
+  font-size: 28px;
+  cursor: pointer;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-box-large {
+  width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #161616;
+  border-radius: 12px;
+  padding: 25px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.close-btn {
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.modal-section {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-section input,
+.modal-section textarea,
+.modal-section select {
+  padding: 10px;
+  background: #222;
+  border: none;
+  color: white;
+  border-radius: 6px;
+}
+
+.modal-section textarea {
+  height: 80px;
+  resize: none;
+}
+
+.upload-box {
+  border: 2px dashed #444;
+  padding: 30px;
+  text-align: center;
+  border-radius: 10px;
+  color: #888;
+}
+
+.date-row {
+  display: flex;
+  gap: 10px;
+}
+
+.toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.primary-btn {
+  background: #ff3b3b;
+  border: none;
+  padding: 10px 20px;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.secondary-btn {
+  background: transparent;
+  border: 1px solid #888;
+  padding: 10px 20px;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
