@@ -2,8 +2,13 @@ import React, { useEffect, useState } from "react";
 import "./Dashboard.css";
 
 function Dashboard() {
-  const [user, setUser] = useState(null);
-  const [announcements, setAnnouncements] = useState([]);
+
+  const [view, setView] = useState("dashboard");
+
+  const [adminAnnouncements, setAdminAnnouncements] = useState([]);
+  const [studentAnnouncements, setStudentAnnouncements] = useState([]);
+  const [myAnnouncements, setMyAnnouncements] = useState([]);
+
   const [showModal, setShowModal] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -14,63 +19,54 @@ function Dashboard() {
     startDate: "",
     endDate: "",
     registrationRequired: false,
+    link: "",                // ✅ ADDED LINK FIELD
     coverImage: null
   });
 
-  /* =========================
-     Initial Load
-  ========================= */
-
   useEffect(() => {
-    fetchCurrentUser();
-    loadAnnouncements();
+    loadAll();
   }, []);
 
-  const fetchCurrentUser = async () => {
-    try {
-      const res = await fetch(
-        "http://localhost:5000/api/auth/current-user",
-        { credentials: "include" }
-      );
-      const data = await res.json();
-      setUser(data);
-    } catch (err) {
-      console.error("User fetch error:", err);
-    }
+  const loadAll = async () => {
+    await Promise.all([
+      loadOfficial(),
+      loadStudentApproved(),
+      loadMine()
+    ]);
   };
 
-  /* =========================
-     Load Announcements (OFFICIAL)
-  ========================= */
-
-  const loadAnnouncements = async () => {
-    try {
-      const res = await fetch(
-        "http://localhost:5000/api/announcements/all"
-      );
-      const data = await res.json();
-      setAnnouncements(data);
-    } catch (err) {
-      console.error("Announcement fetch error:", err);
-    }
+  const loadOfficial = async () => {
+    const res = await fetch(
+      "http://localhost:5000/api/announcements/official?type=admin"
+    );
+    const data = await res.json();
+    setAdminAnnouncements(Array.isArray(data) ? data : []);
   };
 
-  /* =========================
-     Form Handling
-  ========================= */
+  const loadStudentApproved = async () => {
+    const res = await fetch(
+      "http://localhost:5000/api/announcements/official?type=student"
+    );
+    const data = await res.json();
+    setStudentAnnouncements(Array.isArray(data) ? data : []);
+  };
+
+  const loadMine = async () => {
+    const res = await fetch(
+      "http://localhost:5000/api/announcements/my",
+      { credentials: "include" }
+    );
+    const data = await res.json();
+    setMyAnnouncements(Array.isArray(data) ? data : []);
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-
     setFormData({
       ...formData,
       [name]: type === "checkbox" ? checked : value
     });
   };
-
-  /* =========================
-     Submit Announcement
-  ========================= */
 
   const handleSubmit = async () => {
     if (!formData.title || !formData.description) {
@@ -79,207 +75,261 @@ function Dashboard() {
     }
 
     const form = new FormData();
-
-    form.append("title", formData.title);
-    form.append("description", formData.description);
-    form.append("venue", formData.venue);
-    form.append("eventType", formData.eventType);
-    form.append("startDate", formData.startDate);
-    form.append("endDate", formData.endDate);
-    form.append("registrationRequired", formData.registrationRequired);
-
-    if (formData.coverImage) {
-      form.append("image", formData.coverImage);
-    }
-
-    try {
-      let endpoint =
-        user?.role === "student"
-          ? "student"
-          : "create"; // admin direct post
-
-      await fetch(
-        `http://localhost:5000/api/announcements/${endpoint}`,
-        {
-          method: "POST",
-          credentials: "include",
-          body: form
+    Object.keys(formData).forEach(key => {
+      if (key === "coverImage") {
+        if (formData.coverImage) {
+          form.append("image", formData.coverImage);
         }
-      );
+      } else {
+        form.append(key, formData[key]);
+      }
+    });
 
-      setShowModal(false);
+    await fetch(
+      "http://localhost:5000/api/announcements/student-request",
+      {
+        method: "POST",
+        credentials: "include",
+        body: form
+      }
+    );
 
-      setFormData({
-        title: "",
-        description: "",
-        venue: "",
-        eventType: "Workshop",
-        startDate: "",
-        endDate: "",
-        registrationRequired: false,
-        coverImage: null
-      });
+    setShowModal(false);
+    setFormData({
+      title: "",
+      description: "",
+      venue: "",
+      eventType: "Workshop",
+      startDate: "",
+      endDate: "",
+      registrationRequired: false,
+      link: "",               // ✅ RESET LINK
+      coverImage: null
+    });
 
-      loadAnnouncements();
-
-    } catch (err) {
-      console.error("Submit error:", err);
-    }
+    loadAll();
   };
 
   return (
-    <div className="app-container">
+    <div className="student-container">
 
-      {/* Top Header */}
-      <div className="top-header">
-        <h1 className="logo">Academix</h1>
-        <div className="header-icons">
-          <span>🔍</span>
-          <span>🔔</span>
+      <div className="student-header">
+        <div className="header-left">
+          <h2>ACADEMIX</h2>
+          <span className="sub-title">Student Portal</span>
+        </div>
+
+        <div className="header-right">
+          <button
+            className="logout-btn"
+            onClick={() => {
+              window.location.href = "http://localhost:5000/api/auth/logout";
+            }}
+          >
+            Sign Out
+          </button>
         </div>
       </div>
 
-      {/* Feed */}
-      <div className="feed-container">
-        {announcements.length === 0 && (
-          <p>No official announcements available.</p>
-        )}
+      {view === "dashboard" && (
+        <>
+          <h1 className="welcome-title">Welcome Back!</h1>
 
-        {announcements.map(a => (
-          <div key={a._id} className="announcement-card">
+          <div className="card-grid">
 
-            <div className="card-header">
-              <div className="avatar">
-                {a.postedBy?.name?.charAt(0) || "A"}
-              </div>
-              <div>
-                <h4>{a.postedBy?.name || "Administration"}</h4>
-                <small>{a.eventType || "Official Notice"}</small>
-              </div>
+            <div className="dashboard-card" onClick={() => setShowModal(true)}>
+              <div className="plus-icon">+</div>
+              <h3>Create Announcement</h3>
+              <p>Post a new announcement</p>
             </div>
 
-            <h3>{a.title}</h3>
-            <p>{a.description}</p>
+            <div
+              className="dashboard-card"
+              onClick={() => setView("student")}
+            >
+              <h3>Student Announcements</h3>
+              <p>View approved posts</p>
+            </div>
 
-            {a.image && (
-              <img
-                src={`http://localhost:5000/uploads/${a.image}`}
-                alt="cover"
-                style={{
-                  width: "100%",
-                  marginTop: "10px",
-                  borderRadius: "8px"
-                }}
-              />
-            )}
+            <div
+              className="dashboard-card"
+              onClick={() => setView("mine")}
+            >
+              <h3>My Announcements</h3>
+              <p>View your posts</p>
+            </div>
 
-            <small>
-              {a.startDate &&
-                new Date(a.startDate).toLocaleDateString()}
-              {" - "}
-              {a.endDate &&
-                new Date(a.endDate).toLocaleDateString()}
-            </small>
+            <div
+              className="dashboard-card"
+              onClick={() => setView("study")}
+            >
+              <h3>Study Groups</h3>
+              <p>Join and collaborate in subject-wise groups</p>
+            </div>
 
           </div>
-        ))}
-      </div>
 
-      {/* Floating Button */}
-      <button
-        className="floating-btn"
-        onClick={() => setShowModal(true)}
-      >
-        +
-      </button>
+          <h2 className="section-title">Recent Announcements</h2>
 
-      {/* Modal */}
+          {adminAnnouncements.map(a => (
+            <AnnouncementCard key={a._id} a={a} />
+          ))}
+        </>
+      )}
+
+      {/* STUDENT APPROVED VIEW */}
+      {view === "student" && (
+        <>
+          <button
+            className="back-button"
+            onClick={() => setView("dashboard")}
+          >
+            <span className="back-arrow">←</span>
+            Back to Dashboard
+          </button>
+
+          <h2>Student Announcements</h2>
+
+          {studentAnnouncements.map(a => (
+            <AnnouncementCard key={a._id} a={a} />
+          ))}
+        </>
+      )}
+
+      {/* MY ANNOUNCEMENTS VIEW */}
+      {view === "mine" && (
+        <>
+          <button
+            className="back-button"
+            onClick={() => setView("dashboard")}
+          >
+            <span className="back-arrow">←</span>
+            Back to Dashboard
+          </button>
+
+          <h2>My Announcements</h2>
+
+          {myAnnouncements.length === 0 ? (
+            <div className="empty-box">
+              <p>You haven't created any announcements yet</p>
+              <button onClick={() => setShowModal(true)}>
+                Create Your First Announcement
+              </button>
+            </div>
+          ) : (
+            myAnnouncements.map(a => (
+              <AnnouncementCard key={a._id} a={a} />
+            ))
+          )}
+        </>
+      )}
+
+      {/* STUDY GROUP VIEW */}
+      {view === "study" && (
+        <>
+          <button
+            className="back-button"
+            onClick={() => setView("dashboard")}
+          >
+            <span className="back-arrow">←</span>
+            Back to Dashboard
+          </button>
+
+          <h2>Study Groups</h2>
+
+          <div className="empty-box">
+            <p>No study groups yet</p>
+            <button>
+              Create First Study Group
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* MODAL */}
       {showModal && (
         <div className="modal-overlay">
-          <div className="modal-box-large">
+          <div className="modal-box">
 
-            <div className="modal-header">
-              <h2>New Announcement</h2>
-              <span
-                className="close-btn"
-                onClick={() => setShowModal(false)}
-              >
-                ✕
-              </span>
+            <h2>Create Announcement</h2>
+
+            <input
+              name="title"
+              placeholder="Enter announcement title"
+              value={formData.title}
+              onChange={handleChange}
+            />
+
+            <textarea
+              name="description"
+              placeholder="Enter announcement description"
+              value={formData.description}
+              onChange={handleChange}
+            />
+
+            <input
+              name="venue"
+              placeholder="Venue"
+              value={formData.venue}
+              onChange={handleChange}
+            />
+
+            {/* ✅ NEW LINK INPUT */}
+            <input
+              name="link"
+              type="url"
+              placeholder="Reference / Registration Link (optional)"
+              value={formData.link}
+              onChange={handleChange}
+            />
+
+            <select
+              name="eventType"
+              value={formData.eventType}
+              onChange={handleChange}
+            >
+              <option>Workshop</option>
+              <option>Seminar</option>
+              <option>Hackathon</option>
+              <option>Internship</option>
+              <option>Exam</option>
+              <option>General</option>
+            </select>
+
+            <div className="date-row">
+              <input
+                type="date"
+                name="startDate"
+                value={formData.startDate}
+                onChange={handleChange}
+              />
+              <input
+                type="date"
+                name="endDate"
+                value={formData.endDate}
+                onChange={handleChange}
+              />
             </div>
 
-            <div className="modal-section">
-
+            <div className="toggle-row">
+              <label>Registration Required</label>
               <input
-                type="text"
-                name="title"
-                placeholder="Announcement Title"
-                value={formData.title}
+                type="checkbox"
+                name="registrationRequired"
+                checked={formData.registrationRequired}
                 onChange={handleChange}
               />
-
-              <textarea
-                name="description"
-                placeholder="Write announcement details..."
-                value={formData.description}
-                onChange={handleChange}
-              />
-
-              <input
-                type="file"
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    coverImage: e.target.files[0]
-                  })
-                }
-              />
-
-              <input
-                type="text"
-                name="venue"
-                placeholder="Venue"
-                value={formData.venue}
-                onChange={handleChange}
-              />
-
-              <select
-                name="eventType"
-                value={formData.eventType}
-                onChange={handleChange}
-              >
-                <option>Workshop</option>
-                <option>Seminar</option>
-                <option>Hackathon</option>
-                <option>Internship</option>
-              </select>
-
-              <div className="date-row">
-                <input
-                  type="date"
-                  name="startDate"
-                  value={formData.startDate}
-                  onChange={handleChange}
-                />
-                <input
-                  type="date"
-                  name="endDate"
-                  value={formData.endDate}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="toggle-row">
-                <label>Registration Required</label>
-                <input
-                  type="checkbox"
-                  name="registrationRequired"
-                  checked={formData.registrationRequired}
-                  onChange={handleChange}
-                />
-              </div>
-
             </div>
+
+            <input
+              type="file"
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  coverImage: e.target.files[0]
+                })
+              }
+            />
 
             <div className="modal-actions">
               <button
@@ -293,15 +343,56 @@ function Dashboard() {
                 className="primary-btn"
                 onClick={handleSubmit}
               >
-                Publish Announcement
+                Submit for Approval
               </button>
             </div>
 
           </div>
         </div>
       )}
+
     </div>
   );
 }
+
+/* REUSABLE CARD */
+const AnnouncementCard = ({ a }) => (
+  <div className="announcement-card">
+    <h3>{a.title}</h3>
+    <p>{a.description}</p>
+
+    {a.venue && <p><strong>Venue:</strong> {a.venue}</p>}
+    {a.eventType && <p><strong>Type:</strong> {a.eventType}</p>}
+
+    {/* ✅ DISPLAY LINK IF EXISTS */}
+    {a.link && (
+      <p>
+        <strong>Link:</strong>{" "}
+        <a
+          href={a.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="announcement-link"
+        >
+          Visit
+        </a>
+      </p>
+    )}
+
+    {a.image && (
+      <img
+        src={`http://localhost:5000/uploads/${a.image}`}
+        alt=""
+      />
+    )}
+
+    {a.startDate && (
+      <small>
+        {new Date(a.startDate).toLocaleDateString()}
+        {a.endDate && " - " + new Date(a.endDate).toLocaleDateString()}
+      </small>
+    )}
+  </div>
+);
 
 export default Dashboard;

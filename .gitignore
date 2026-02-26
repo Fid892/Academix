@@ -1,0 +1,6 @@
+node_modules/
+.env
+uploads/
+academix-auth/backend/node_modules/
+academix-auth/frontend/node_modules/
+academix-auth/backend/uploads/

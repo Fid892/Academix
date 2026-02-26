@@ -1,18 +1,22 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "./Admin.css";
 
 function ManageAnnouncements() {
   const [pending, setPending] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadPending();
   }, []);
 
-  const loadPending = () => {
-    fetch("http://localhost:5000/api/announcements/pending", {
-      credentials: "include"
-    })
-      .then(res => res.json())
-      .then(data => setPending(data));
+  const loadPending = async () => {
+    const res = await fetch(
+      "http://localhost:5000/api/announcements/pending",
+      { credentials: "include" }
+    );
+    const data = await res.json();
+    setPending(Array.isArray(data) ? data : []);
   };
 
   const approveAnnouncement = async (id) => {
@@ -28,42 +32,48 @@ function ManageAnnouncements() {
   };
 
   return (
-    <div style={{ padding: "30px", background: "#0f0f0f", minHeight: "100vh", color: "white" }}>
-      <h2>Pending Announcements</h2>
+    <div className="admin-container">
 
-      {pending.length === 0 ? (
-        <p>No pending announcements</p>
-      ) : (
-        pending.map(a => (
-          <div
-            key={a._id}
-            style={{
-              background: "#1c1c1c",
-              padding: "20px",
-              borderRadius: "10px",
-              marginBottom: "20px"
-            }}
-          >
-            <h3>{a.title}</h3>
-            <p>{a.description}</p>
-            <p><strong>Posted by:</strong> {a.postedBy?.name}</p>
+      {/* Sidebar */}
+      <div className="sidebar">
+        <h2>Academix</h2>
 
-            <button
-              style={{
-                background: "#ff3b3b",
-                border: "none",
-                padding: "8px 15px",
-                borderRadius: "5px",
-                color: "white",
-                cursor: "pointer"
-              }}
-              onClick={() => approveAnnouncement(a._id)}
-            >
-              Approve
-            </button>
-          </div>
-        ))
-      )}
+        <ul>
+          <li onClick={() => navigate("/admin")}>
+            Dashboard
+          </li>
+
+          <li className="active">
+            Manage Announcements
+          </li>
+        </ul>
+      </div>
+
+      {/* Main */}
+      <div className="main">
+        <div className="topbar">
+          <h1>Pending Requests</h1>
+        </div>
+
+        <div className="card">
+          {pending.length === 0 ? (
+            <p>No pending announcements</p>
+          ) : (
+            pending.map(a => (
+              <div key={a._id} className="announcement">
+                <h4>{a.title}</h4>
+                <p>{a.description}</p>
+                <p><strong>Posted by:</strong> {a.postedBy?.name}</p>
+
+                <button onClick={() => approveAnnouncement(a._id)}>
+                  Approve
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
     </div>
   );
 }

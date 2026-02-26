@@ -5,6 +5,7 @@ const session = require("express-session");
 const passport = require("passport");
 const cors = require("cors");
 const path = require("path");
+const departmentRoutes = require("./routes/departments");
 
 dotenv.config();
 require("./config/passport");
@@ -51,6 +52,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/announcements", require("./routes/announcementRoutes"));
+app.use("/api/departments", departmentRoutes);
 
 /* =============================
    Start Server

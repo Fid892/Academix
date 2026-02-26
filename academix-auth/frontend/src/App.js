@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Dashboard from "./Dashboard";
 import Admin from "./Admin";
 import ManageAnnouncements from "./ManageAnnouncements";
+import StudyGroups from "./StudyGroups";   // ✅ already imported
 import "./Login.css";
 
 function Home() {
@@ -39,14 +40,17 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Home />} />
 
-        {/* Dashboard */}
+        {/* Student Dashboard */}
         <Route path="/dashboard" element={<Dashboard />} />
 
-        {/* Existing Admin Add User Module */}
+        {/* Admin Panel */}
         <Route path="/admin" element={<Admin />} />
 
-        {/* NEW Manage Announcements Page */}
+        {/* Manage Announcements */}
         <Route path="/manage-announcements" element={<ManageAnnouncements />} />
+
+        {/* ✅ NEW Study Groups Page */}
+        <Route path="/study-groups" element={<StudyGroups />} />
 
       </Routes>
     </Router>

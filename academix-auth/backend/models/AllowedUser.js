@@ -4,16 +4,13 @@ const allowedUserSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    lowercase: true
   },
   role: {
     type: String,
     enum: ["student", "faculty", "admin"],
     required: true
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
   }
 });
 

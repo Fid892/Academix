@@ -1,445 +1,556 @@
 import { useState, useEffect } from "react";
 import "./Admin.css";
-
+import { useNavigate } from "react-router-dom";
+import ManageGroups from "./ManageGroups";
 function Admin() {
 
-  /* =============================
+  const navigate = useNavigate();
+
+  /* ==============================
      Navigation
-  ============================= */
-  const [activeTab, setActiveTab] = useState("dashboard");
+  ============================== */
 
-  /* =============================
-     Users Management
-  ============================= */
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState("student");
-  const [users, setUsers] = useState([]);
-  const [message, setMessage] = useState("");
-  const [file, setFile] = useState(null);
-  const [uploadMessage, setUploadMessage] = useState("");
-  const [search, setSearch] = useState("");
+  const [activeSection, setActiveSection] = useState("dashboard");
 
-  /* =============================
-     Announcement System
-  ============================= */
-  const [announcementTab, setAnnouncementTab] = useState("official");
-  const [showModal, setShowModal] = useState(false);
-  const [announcements, setAnnouncements] = useState([]);
+  /* ==============================
+     Dashboard Stats
+  ============================== */
+
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    totalAnnouncements: 0,
+    pendingRequests: 0
+  });
+
+  /* ==============================
+     Existing Announcement States
+  ============================== */
+
+  const [officialAnnouncements, setOfficialAnnouncements] = useState([]);
+  const [studentApprovedAnnouncements, setStudentApprovedAnnouncements] = useState([]);
   const [pendingAnnouncements, setPendingAnnouncements] = useState([]);
 
-  const [newAnnouncement, setNewAnnouncement] = useState({
+  /* ==============================
+     Notice Modal State
+  ============================== */
+
+  const [showNoticeModal, setShowNoticeModal] = useState(false);
+
+  const [noticeForm, setNoticeForm] = useState({
     title: "",
     description: "",
+    venue: "",
+    type: "General",
+    singleDate: "",
     startDate: "",
     endDate: "",
+    includeImage: false,
     image: null
   });
 
-  /* =============================
+  const [preview, setPreview] = useState(null);
+
+  /* ==============================
      Initial Load
-  ============================= */
+  ============================== */
+
   useEffect(() => {
-    fetchUsers();
-    fetchAnnouncements();
+    loadAll();
   }, []);
 
-  /* =============================
-     Fetch Users
-  ============================= */
-  const fetchUsers = async () => {
+  const loadAll = async () => {
+    await Promise.all([
+      loadStats(),
+      loadOfficial(),
+      loadStudentApproved(),
+      loadPending()
+    ]);
+  };
+
+  /* ==============================
+     Loaders
+  ============================== */
+
+  const loadStats = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/admin/all", {
-        credentials: "include"
-      });
+      const res = await fetch(
+        "http://localhost:5000/api/admin/dashboard-stats",
+        { credentials: "include" }
+      );
       const data = await res.json();
-      setUsers(data);
-    } catch (err) {
-      console.error("User fetch error:", err);
+      setStats(data || {});
+    } catch {}
+  };
+
+  const loadOfficial = async () => {
+    try {
+      const res = await fetch(
+        "http://localhost:5000/api/announcements/official?type=admin"
+      );
+      const data = await res.json();
+      setOfficialAnnouncements(Array.isArray(data) ? data : []);
+    } catch {
+      setOfficialAnnouncements([]);
     }
   };
 
-  /* =============================
-     Fetch Announcements
-  ============================= */
-  const fetchAnnouncements = async () => {
+  const loadStudentApproved = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/announcements/all");
+      const res = await fetch(
+        "http://localhost:5000/api/announcements/official?type=student"
+      );
       const data = await res.json();
-      setAnnouncements(data);
-    } catch (err) {
-      console.error("Announcement fetch error:", err);
+      setStudentApprovedAnnouncements(Array.isArray(data) ? data : []);
+    } catch {
+      setStudentApprovedAnnouncements([]);
     }
   };
 
-  /* =============================
+  const loadPending = async () => {
+    try {
+      const res = await fetch(
+        "http://localhost:5000/api/announcements/pending",
+        { credentials: "include" }
+      );
+      const data = await res.json();
+      setPendingAnnouncements(Array.isArray(data) ? data : []);
+    } catch {
+      setPendingAnnouncements([]);
+    }
+  };
+
+  /* ==============================
+     Approve / Reject
+  ============================== */
+
+  const approve = async (id) => {
+    await fetch(
+      `http://localhost:5000/api/announcements/${id}/approve`,
+      { method: "PATCH", credentials: "include" }
+    );
+    loadAll();
+  };
+
+  const reject = async (id) => {
+    await fetch(
+      `http://localhost:5000/api/announcements/${id}/reject`,
+      { method: "PATCH", credentials: "include" }
+    );
+    loadAll();
+  };
+
+  /* ==============================
+     Notice Publish Logic
+  ============================== */
+
+  const publishNotice = async () => {
+
+    if (!noticeForm.title || !noticeForm.description) {
+      alert("Title and Description required");
+      return;
+    }
+
+    const form = new FormData();
+
+    form.append("title", noticeForm.title);
+    form.append("description", noticeForm.description);
+    form.append("venue", noticeForm.venue);
+    form.append("eventType", noticeForm.type);
+
+    if (noticeForm.type === "Holiday") {
+      form.append("startDate", noticeForm.singleDate);
+    } else {
+      form.append("startDate", noticeForm.startDate);
+      form.append("endDate", noticeForm.endDate);
+    }
+
+    if (noticeForm.includeImage && noticeForm.image) {
+      form.append("image", noticeForm.image);
+    }
+
+    await fetch(
+      "http://localhost:5000/api/announcements/create",
+      {
+        method: "POST",
+        credentials: "include",
+        body: form
+      }
+    );
+
+    resetNoticeForm();
+    setShowNoticeModal(false);
+    loadAll();
+  };
+
+  const resetNoticeForm = () => {
+    setNoticeForm({
+      title: "",
+      description: "",
+      venue: "",
+      type: "General",
+      singleDate: "",
+      startDate: "",
+      endDate: "",
+      includeImage: false,
+      image: null
+    });
+    setPreview(null);
+  };
+
+  /* ==============================
      Logout
-  ============================= */
+  ============================== */
+
   const handleLogout = () => {
     window.location.href = "http://localhost:5000/api/auth/logout";
   };
 
-  /* =============================
-     Add User
-  ============================= */
-  const addUser = async () => {
-    if (!email) {
-      setMessage("Email is required");
-      return;
-    }
-
-    try {
-      const res = await fetch("http://localhost:5000/api/admin/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email, role })
-      });
-
-      const data = await res.json();
-      setMessage(data.message);
-      setEmail("");
-      fetchUsers();
-    } catch (err) {
-      console.error("Add user error:", err);
-    }
-  };
-
-  /* =============================
-     Delete User
-  ============================= */
-  const deleteUser = async (id) => {
-    try {
-      await fetch(`http://localhost:5000/api/admin/delete/${id}`, {
-        method: "DELETE",
-        credentials: "include"
-      });
-
-      setUsers(users.filter(user => user._id !== id));
-    } catch (err) {
-      console.error("Delete error:", err);
-    }
-  };
-
-  /* =============================
-     CSV Upload
-  ============================= */
-  const handleFileUpload = async () => {
-    if (!file) {
-      setUploadMessage("Please select a CSV file");
-      return;
-    }
-
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await fetch("http://localhost:5000/api/admin/upload", {
-        method: "POST",
-        credentials: "include",
-        body: formData
-      });
-
-      const data = await res.json();
-      setUploadMessage(data.message);
-      fetchUsers();
-    } catch (err) {
-      console.error("CSV upload error:", err);
-    }
-  };
-
-  /* =============================
-     Publish Announcement
-  ============================= */
-  const publishAnnouncement = async () => {
-
-    if (!newAnnouncement.title || !newAnnouncement.description) {
-      alert("Title and Description are required");
-      return;
-    }
-
-    try {
-      const formData = new FormData();
-      formData.append("title", newAnnouncement.title);
-      formData.append("description", newAnnouncement.description);
-      formData.append("startDate", newAnnouncement.startDate);
-      formData.append("endDate", newAnnouncement.endDate);
-
-      if (newAnnouncement.image) {
-        formData.append("image", newAnnouncement.image);
-      }
-
-      const res = await fetch(
-        "http://localhost:5000/api/announcements/create",
-        {
-          method: "POST",
-          credentials: "include",
-          body: formData
-        }
-      );
-
-      const data = await res.json();
-
-      if (res.ok) {
-        setShowModal(false);
-
-        setNewAnnouncement({
-          title: "",
-          description: "",
-          startDate: "",
-          endDate: "",
-          image: null
-        });
-
-        fetchAnnouncements();
-      } else {
-        alert(data.message || "Error posting announcement");
-      }
-
-    } catch (err) {
-      console.error("Publish error:", err);
-    }
-  };
-
-  /* =============================
-     Pending Controls
-  ============================= */
-  const approveAnnouncement = (index) => {
-    const approved = pendingAnnouncements[index];
-    setAnnouncements([...announcements, approved]);
-    setPendingAnnouncements(
-      pendingAnnouncements.filter((_, i) => i !== index)
-    );
-  };
-
-  const rejectAnnouncement = (index) => {
-    setPendingAnnouncements(
-      pendingAnnouncements.filter((_, i) => i !== index)
-    );
-  };
-
-  /* =============================
-     Filtered Users
-  ============================= */
-  const filteredUsers = users.filter(user =>
-    user.email.toLowerCase().includes(search.toLowerCase()) ||
-    user.role.toLowerCase().includes(search.toLowerCase())
-  );
+  /* ==============================
+     UI
+  ============================== */
 
   return (
-    <div className="admin-layout">
+    <div className="admin-container">
 
       {/* Sidebar */}
-      <div className="admin-sidebar">
-        <h2 className="brand">Academix</h2>
+      <div className="sidebar">
+        <h2>Academix</h2>
         <ul>
           <li
-            className={activeTab === "dashboard" ? "active" : ""}
-            onClick={() => setActiveTab("dashboard")}
+            className={activeSection === "dashboard" ? "active" : ""}
+            onClick={() => setActiveSection("dashboard")}
           >
             Dashboard
           </li>
 
           <li
-            className={activeTab === "users" ? "active" : ""}
-            onClick={() => setActiveTab("users")}
+            className={activeSection === "notice" ? "active" : ""}
+            onClick={() => setActiveSection("notice")}
           >
-            Manage Users
+            Notice
           </li>
 
           <li
-            className={activeTab === "announcements" ? "active" : ""}
-            onClick={() => setActiveTab("announcements")}
+            className={activeSection === "announcements" ? "active" : ""}
+            onClick={() => setActiveSection("announcements")}
           >
             Announcements
           </li>
 
-          <li onClick={handleLogout}>
+          <li
+            className={activeSection === "pending" ? "active" : ""}
+            onClick={() => setActiveSection("pending")}
+          >
+            Pending Requests
+          </li>
+          <li
+            className={activeSection === "groups" ? "active" : ""}
+            onClick={() => setActiveSection("groups")}
+          >
+            Manage Groups
+          </li>
+
+          <li className="logout-btn" onClick={handleLogout}>
             Logout
           </li>
         </ul>
       </div>
 
-      {/* Main Content */}
-      <div className="admin-main">
+      {/* Main */}
+      <div className="main">
 
-        {/* Dashboard */}
-        {activeTab === "dashboard" && (
-          <div className="card">
-            <h2>Admin Overview</h2>
-            <p>Welcome to the Academix administration panel.</p>
-          </div>
-        )}
-
-        {/* Users Module */}
-        {activeTab === "users" && (
-          <div className="card">
-            <h3>Allowed Users</h3>
-
-            <input
-              type="text"
-              placeholder="Search by email or role"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="search-input"
-            />
-
-            <table>
-              <thead>
-                <tr>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {filteredUsers.map((user) => (
-                  <tr key={user._id}>
-                    <td>{user.email}</td>
-                    <td>
-                      <span className={`role-badge role-${user.role}`}>
-                        {user.role}
-                      </span>
-                    </td>
-                    <td>
-                      <button
-                        className="delete-btn"
-                        onClick={() => deleteUser(user._id)}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Announcement Module */}
-        {activeTab === "announcements" && (
-          <div className="card">
-
-            <div className="announcement-header">
-              <h2>Announcements</h2>
-              <button onClick={() => setShowModal(true)}>
-                Post Announcement
-              </button>
+        {/* DASHBOARD */}
+        {activeSection === "dashboard" && (
+          <>
+            <div className="topbar">
+              <h1>Admin Dashboard</h1>
             </div>
 
-            <div className="announcement-list">
-              {announcements.length === 0 && (
-                <p className="empty-text">No announcements yet.</p>
-              )}
+            <div className="stats-grid">
+              <div className="stat-card">
+                <h3>{stats.totalStudents || 0}</h3>
+                <p>Total Students</p>
+              </div>
 
-              {announcements.map((item) => (
-                <div key={item._id} className="announcement-card">
-                  <h3>{item.title}</h3>
+              <div className="stat-card">
+                <h3>{stats.totalAnnouncements || 0}</h3>
+                <p>Total Notices</p>
+              </div>
 
-                  {item.image && (
-                    <img
-                      src={`http://localhost:5000/uploads/${item.image}`}
-                      alt="announcement"
-                      className="announcement-image"
-                    />
-                  )}
+              <div className="stat-card">
+                <h3>{stats.pendingRequests || 0}</h3>
+                <p>Pending Requests</p>
+              </div>
+            </div>
+          </>
+        )}
 
-                  <p>{item.description}</p>
+        {/* NOTICE SECTION */}
+        {activeSection === "notice" && (
+          <div className="card">
+            <h3>Official Notices</h3>
 
-                  <small>
-                    {item.startDate && new Date(item.startDate).toLocaleDateString()}
-                    {" - "}
-                    {item.endDate && new Date(item.endDate).toLocaleDateString()}
-                  </small>
+            {officialAnnouncements.map(a => (
+                  <div key={a._id} className="announcement">
+    <h4>{a.title}</h4>
+    <p>{a.description}</p>
+
+    {a.eventType && (
+      <p><strong>Type:</strong> {a.eventType}</p>
+    )}
+
+    {a.venue && (
+      <p><strong>Venue:</strong> {a.venue}</p>
+    )}
+
+    {a.startDate && (
+      <p>
+        <strong>Date:</strong>{" "}
+        {new Date(a.startDate).toLocaleDateString()}
+        {a.endDate &&
+          ` - ${new Date(a.endDate).toLocaleDateString()}`}
+      </p>
+    )}
+
+    {a.image && (
+      <img
+        src={`http://localhost:5000/uploads/${a.image}`}
+        alt="notice"
+        style={{
+          width: "220px",
+          marginTop: "10px",
+          borderRadius: "8px"
+        }}
+      />
+    )}
                 </div>
-              ))}
-            </div>
+            ))} 
+
+            {/* Floating Add Button */}
+            <button
+              className="floating-add-btn"
+              onClick={() => setShowNoticeModal(true)}
+            >
+              +
+            </button>
           </div>
+        )}
+
+        {/* STUDENT ANNOUNCEMENTS */}
+        {activeSection === "announcements" && (
+          <div className="card">
+            <h3>Approved Student Announcements</h3>
+
+            {studentApprovedAnnouncements.map(a => (
+              <div key={a._id} className="announcement">
+                <h4>{a.title}</h4>
+                <p>{a.description}</p>
+                <p><strong>Venue:</strong> {a.venue}</p>
+                <p><strong>Type:</strong> {a.eventType}</p>
+
+                {a.image && (
+                  <img
+                    src={`http://localhost:5000/uploads/${a.image}`}
+                    alt=""
+                    style={{ width: "200px", marginTop: "10px" }}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* PENDING */}
+        {activeSection === "pending" && (
+          <div className="card">
+            <h3>Pending Requests</h3>
+
+            {pendingAnnouncements.map(a => (
+              <div key={a._id} className="announcement">
+                <h4>{a.title}</h4>
+                <p>{a.description}</p>
+
+                <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+                  <button onClick={() => approve(a._id)}>
+                    Approve
+                  </button>
+
+                  <button
+                    style={{ background: "#444" }}
+                    onClick={() => reject(a._id)}
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* MANAGE GROUPS */}
+        {activeSection === "groups" && (
+          <ManageGroups />
+        )}
+
+        {/* NOTICE MODAL */}
+{showNoticeModal && (
+  <div className="notice-modal-overlay">
+    <div className="notice-modal">
+
+      <div className="notice-header">
+        <h2>Create Notice</h2>
+        <span
+          className="close-btn"
+          onClick={() => setShowNoticeModal(false)}
+        >
+          ✕
+        </span>
+      </div>
+
+      <div className="notice-body">
+
+        <input
+          className="notice-input"
+          placeholder="Notice Title"
+          value={noticeForm.title}
+          onChange={(e) =>
+            setNoticeForm({ ...noticeForm, title: e.target.value })
+          }
+        />
+
+        <textarea
+          className="notice-textarea"
+          placeholder="Write notice description..."
+          value={noticeForm.description}
+          onChange={(e) =>
+            setNoticeForm({ ...noticeForm, description: e.target.value })
+          }
+        />
+
+        <div className="row">
+          <select
+            className="notice-select"
+            value={noticeForm.type}
+            onChange={(e) =>
+              setNoticeForm({ ...noticeForm, type: e.target.value })
+            }
+          >
+            <option value="General">General</option>
+            <option value="Event">Event</option>
+            <option value="Workshop">Workshop</option>
+            <option value="Seminar">Seminar</option>
+            <option value="Internship">Internship</option>
+            <option value="Hackathon">Hackathon</option>
+            <option value="Holiday">Holiday</option>
+            <option value="Other">Other</option>
+          </select>
+
+          <input
+            className="notice-input"
+            placeholder="Venue"
+            value={noticeForm.venue}
+            onChange={(e) =>
+              setNoticeForm({ ...noticeForm, venue: e.target.value })
+            }
+          />
+        </div>
+
+        {/* Holiday Single Date */}
+        {noticeForm.type === "Holiday" && (
+          <input
+            type="date"
+            className="notice-input"
+            value={noticeForm.singleDate}
+            onChange={(e) =>
+              setNoticeForm({ ...noticeForm, singleDate: e.target.value })
+            }
+          />
+        )}
+
+        {/* Event Range */}
+        {["Workshop","Seminar","Internship","Hackathon","Event"].includes(noticeForm.type) && (
+          <div className="row">
+            <input
+              type="date"
+              className="notice-input"
+              value={noticeForm.startDate}
+              onChange={(e) =>
+                setNoticeForm({ ...noticeForm, startDate: e.target.value })
+              }
+            />
+            <input
+              type="date"
+              className="notice-input"
+              value={noticeForm.endDate}
+              onChange={(e) =>
+                setNoticeForm({ ...noticeForm, endDate: e.target.value })
+              }
+            />
+          </div>
+        )}
+
+        <div className="image-toggle">
+          <label>
+            <input
+              type="checkbox"
+              checked={noticeForm.includeImage}
+              onChange={(e) =>
+                setNoticeForm({
+                  ...noticeForm,
+                  includeImage: e.target.checked
+                })
+              }
+            />
+            Include Image
+          </label>
+        </div>
+
+        {noticeForm.includeImage && (
+          <>
+            <div className="upload-box">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  setNoticeForm({ ...noticeForm, image: file });
+                  if (file) setPreview(URL.createObjectURL(file));
+                }}
+              />
+            </div>
+
+            {preview && (
+              <img
+                src={preview}
+                alt=""
+                className="preview-img"
+              />
+            )}
+          </>
         )}
 
       </div>
 
-      {/* Modal */}
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-box">
+      <div className="notice-footer">
+        <button
+          className="secondary-btn"
+          onClick={() => setShowNoticeModal(false)}
+        >
+          Cancel
+        </button>
 
-            <h2>Create Announcement</h2>
+        <button
+          className="primary-btn"
+          onClick={publishNotice}
+        >
+          Publish Notice
+        </button>
+      </div>
 
-            <input
-              type="text"
-              placeholder="Title"
-              value={newAnnouncement.title}
-              onChange={(e) =>
-                setNewAnnouncement({
-                  ...newAnnouncement,
-                  title: e.target.value
-                })
-              }
-            />
-
-            <textarea
-              placeholder="Description"
-              value={newAnnouncement.description}
-              onChange={(e) =>
-                setNewAnnouncement({
-                  ...newAnnouncement,
-                  description: e.target.value
-                })
-              }
-            />
-
-            <div className="date-row">
-              <input
-                type="date"
-                value={newAnnouncement.startDate}
-                onChange={(e) =>
-                  setNewAnnouncement({
-                    ...newAnnouncement,
-                    startDate: e.target.value
-                  })
-                }
-              />
-
-              <input
-                type="date"
-                value={newAnnouncement.endDate}
-                onChange={(e) =>
-                  setNewAnnouncement({
-                    ...newAnnouncement,
-                    endDate: e.target.value
-                  })
-                }
-              />
-            </div>
-
-            <input
-              type="file"
-              onChange={(e) =>
-                setNewAnnouncement({
-                  ...newAnnouncement,
-                  image: e.target.files[0]
-                })
-              }
-            />
-
-            <div className="modal-actions">
-              <button onClick={publishAnnouncement}>
-                Publish
-              </button>
-
-              <button
-                className="cancel-btn"
-                onClick={() => setShowModal(false)}
-              >
-                Cancel
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
-
+    </div>
+  </div>
+)}
+      </div>
     </div>
   );
 }

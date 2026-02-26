@@ -1,28 +1,30 @@
 const router = require("express").Router();
 const AllowedUser = require("../models/AllowedUser");
+const Announcement = require("../models/Announcement");
+const User = require("../models/User");
+const { isAuthenticated, isAdmin } = require("../middleware/auth");
 
 const multer = require("multer");
 const csv = require("csv-parser");
 const fs = require("fs");
 
-// ============================
-// Multer Storage Configuration
-// ============================
-const upload = multer({
-  dest: "uploads/"
-});
+/* ============================
+   Multer Setup
+============================ */
+const upload = multer({ dest: "uploads/" });
 
-
-// ============================
-// Add Single Allowed User
-// ============================
+/* ============================
+   Add Single Allowed User
+============================ */
 router.post("/add", async (req, res) => {
   try {
-    const { email, role } = req.body;
+    let { email, role } = req.body;
 
     if (!email || !role) {
       return res.status(400).json({ message: "Email and role required" });
     }
+
+    email = email.toLowerCase().trim();
 
     const existing = await AllowedUser.findOne({ email });
 
@@ -38,31 +40,25 @@ router.post("/add", async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-
-// ============================
-// Get All Allowed Users
-// ============================
+/* ============================
+   Get All Allowed Users
+============================ */
 router.get("/all", async (req, res) => {
   try {
     const users = await AllowedUser.find();
-    res.status(200).json(users);
+    res.json(users);
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-
-// ============================
-// Bulk Upload CSV File
-// CSV Format:
-// email,role
-// student1@gmail.com,student
-// faculty1@gmail.com,faculty
-// ============================
+/* ============================
+   Bulk Upload CSV
+============================ */
 router.post("/upload", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
@@ -77,9 +73,11 @@ router.post("/upload", upload.single("file"), async (req, res) => {
       .on("end", async () => {
 
         for (const row of results) {
-          const { email, role } = row;
+          let { email, role } = row;
 
           if (!email || !role) continue;
+
+          email = email.toLowerCase().trim();
 
           const exists = await AllowedUser.findOne({ email });
 
@@ -88,28 +86,66 @@ router.post("/upload", upload.single("file"), async (req, res) => {
           }
         }
 
-        // Delete uploaded file after processing
+        // Only ONE unlink
         fs.unlinkSync(req.file.path);
 
+        // Only ONE response
         res.json({ message: "Bulk users uploaded successfully" });
       });
 
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: "Server error" });
   }
 });
-// Delete user by ID
+
+
+/* ============================
+   Delete Allowed User
+============================ */
 router.delete("/delete/:id", async (req, res) => {
   try {
-    const { id } = req.params;
-
-    await AllowedUser.findByIdAndDelete(id);
-
-    res.status(200).json({ message: "User deleted successfully" });
-
+    await AllowedUser.findByIdAndDelete(req.params.id);
+    res.json({ message: "User deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: "Server error" });
   }
 });
+
+/* ============================
+   Dashboard Stats
+============================ */
+router.get(
+  "/dashboard-stats",
+  isAuthenticated,
+  isAdmin,
+  async (req, res) => {
+    try {
+      const totalStudents = await User.countDocuments({ role: "student" });
+
+      const totalAnnouncements = await Announcement.countDocuments({
+        status: "official"
+      });
+
+      const pendingRequests = await Announcement.countDocuments({
+        status: "pending"
+      });
+
+      const recentActivity = await Announcement.find()
+        .populate("postedBy", "name role")
+        .sort({ createdAt: -1 })
+        .limit(5);
+
+      res.json({
+        totalStudents,
+        totalAnnouncements,
+        pendingRequests,
+        recentActivity
+      });
+
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
+  }
+);
 
 module.exports = router;
