@@ -83,7 +83,9 @@ router.get("/current-user", (req, res) => {
     name: req.user.name,
     email: req.user.email,
     role: req.user.role,
-    department: req.user.department || ""
+    department: req.user.department || "",
+    semester: req.user.semester || "",
+    designation: req.user.designation || ""
   });
 });
 

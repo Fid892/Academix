@@ -58,6 +58,12 @@ const groupPostSchema = new mongoose.Schema(
       type: String
     },
 
+    /* Faculty mention for doubts */
+    mentionedFaculty: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    },
+
     comments: [commentSchema]
   },
   {

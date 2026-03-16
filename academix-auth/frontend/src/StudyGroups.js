@@ -100,10 +100,28 @@ function GroupDiscussion({ group, user, onBack }) {
   const [newPost, setNewPost] = useState("");
   const [noteFile, setNoteFile] = useState(null);
   const [noteContent, setNoteContent] = useState("");
+  const [doubtFile, setDoubtFile] = useState(null);
   const [doubtContent, setDoubtContent] = useState("");
+  const [faculties, setFaculties] = useState([]);
+  const [selectedFaculty, setSelectedFaculty] = useState("");
+  const [replyInputs, setReplyInputs] = useState({}); // { postId: "some text" }
   const [activeTab, setActiveTab] = useState("discussions");
 
-  useEffect(() => { fetchPosts(); }, []);
+  useEffect(() => { 
+    fetchPosts(); 
+    fetchFaculties();
+  }, []);
+
+  async function fetchFaculties() {
+    try {
+      const res = await fetch("http://localhost:5000/api/study-groups/faculties/list", { credentials: "include" });
+      const data = await res.json();
+      setFaculties(Array.isArray(data) ? data : []);
+    } catch (err) { 
+      console.error(err);
+      setFaculties([]);
+    }
+  }
 
   async function fetchPosts() {
     try {
@@ -131,11 +149,19 @@ function GroupDiscussion({ group, user, onBack }) {
     formData.append("content", noteContent);
     formData.append("type", "note");
     formData.append("noteCategory", category);
-    const res = await fetch(`http://localhost:5000/api/study-groups/${group._id}/posts`, {
-      method: "POST", credentials: "include", body: formData
-    });
-    if (res.ok) {
-      setNoteFile(null); setNoteContent(""); fetchPosts();
+    try {
+      const res = await fetch(`http://localhost:5000/api/study-groups/${group._id}/posts`, {
+        method: "POST", credentials: "include", body: formData
+      });
+      if (res.ok) {
+        setNoteFile(null); setNoteContent(""); fetchPosts();
+      } else {
+        const errData = await res.json();
+        alert(`Error: ${errData.message || "Failed to upload note"}`);
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("Network Error: Could not connect to the server.");
     }
   }
 
@@ -144,11 +170,36 @@ function GroupDiscussion({ group, user, onBack }) {
     const formData = new FormData();
     formData.append("content", doubtContent);
     formData.append("type", "doubt");
-    const res = await fetch(`http://localhost:5000/api/study-groups/${group._id}/posts`, {
-      method: "POST", credentials: "include", body: formData
+    if (doubtFile) formData.append("file", doubtFile);
+    if (selectedFaculty) formData.append("mentionedFaculty", selectedFaculty);
+    try {
+      const res = await fetch(`http://localhost:5000/api/study-groups/${group._id}/posts`, {
+        method: "POST", credentials: "include", body: formData
+      });
+      if (res.ok) {
+        setDoubtContent(""); setSelectedFaculty(""); setDoubtFile(null); fetchPosts();
+      } else {
+        const errData = await res.json();
+        alert(`Error: ${errData.message || "Could not post doubt"}`);
+      }
+    } catch (error) {
+      console.error("Doubt error:", error);
+      alert("Network Error: Could not connect to the server.");
+    }
+  }
+
+  async function handleAddReply(postId) {
+    const text = replyInputs[postId];
+    if (!text || !text.trim()) return;
+    const res = await fetch(`http://localhost:5000/api/study-groups/${group._id}/posts/${postId}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ text })
     });
     if (res.ok) {
-      setDoubtContent(""); fetchPosts();
+      setReplyInputs({ ...replyInputs, [postId]: "" });
+      fetchPosts();
     }
   }
 
@@ -361,6 +412,30 @@ function GroupDiscussion({ group, user, onBack }) {
                     onChange={(e) => setDoubtContent(e.target.value)}
                     style={{ background: '#1a1b1e', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-subtle)', color: 'white', resize: 'none', fontSize: '0.95rem' }}
                     />
+
+                    <div style={{ position: 'relative' }}>
+                        <input
+                            type="file"
+                            id="doubt-file-upload"
+                            style={{ display: 'none' }}
+                            onChange={(e) => setDoubtFile(e.target.files[0])}
+                        />
+                        <label htmlFor="doubt-file-upload" style={{ display: 'block', background: '#1a1b1e', padding: '10px', borderRadius: '10px', border: '1px solid var(--border-subtle)', cursor: 'pointer', textAlign: 'center', fontSize: '0.85rem', color: doubtFile ? 'var(--accent-student)' : 'var(--text-dim)' }}>
+                            {doubtFile ? `📎 ${doubtFile.name}` : "🖼️ Add Proof (Image/PDF)"}
+                        </label>
+                    </div>
+                    
+                    <select 
+                      value={selectedFaculty} 
+                      onChange={(e) => setSelectedFaculty(e.target.value)}
+                      style={{ background: '#1a1b1e', padding: '10px', borderRadius: '10px', border: '1px solid var(--border-subtle)', color: 'white', fontSize: '0.85rem' }}
+                    >
+                      <option value="">Mention a Faculty (Optional)</option>
+                      {Array.isArray(faculties) && faculties.map(f => (
+                        <option key={f._id} value={f._id}>Prof. {f.name} ({f.department})</option>
+                      ))}
+                    </select>
+
                     <button className="primary-btn" style={{ background: 'var(--accent-student)', padding: '12px' }} onClick={handleAskDoubt}>
                         Request Clarification
                     </button>
@@ -368,15 +443,62 @@ function GroupDiscussion({ group, user, onBack }) {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {doubts.map(doubt => (
-                <div className="announcement-card" key={doubt._id} style={{ borderLeft: '4px solid var(--accent-student)', position: 'relative', background: 'rgba(255,255,255,0.01)' }}>
-                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                     <p style={{ margin: '0 0 8px', fontWeight: 'bold', fontSize: '0.95rem', color: 'var(--accent-student)' }}>Doubt by {doubt.postedBy?.name}</p>
+                <div className="announcement-card" key={doubt._id} style={{ borderLeft: '4px solid var(--accent-student)', position: 'relative', background: 'rgba(255,255,255,0.01)', padding: '20px' }}>
+                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                     <p style={{ margin: 0, fontWeight: 'bold', fontSize: '0.95rem', color: 'var(--accent-student)' }}>Doubt by {doubt.postedBy?.name}</p>
                      {user && doubt.postedBy?._id === user._id && <button onClick={() => handleDeletePost(doubt._id)} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1rem', opacity: 0.6 }}>✕</button>}
                    </div>
-                   <p style={{ margin: '0 0 16px', color: 'var(--text-main)', fontStyle: 'italic', lineHeight: '1.5' }}>"{doubt.content}"</p>
-                   <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{new Date(doubt.createdAt).toLocaleDateString()}</span>
-                      <span style={{ color: 'var(--accent-student)', fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '0.05em' }}>UNRESOLVED</span>
+
+                   {doubt.mentionedFaculty && (
+                     <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '6px 12px', borderRadius: '6px', marginBottom: '12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-faculty)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                        <span>🔔 Tagged:</span>
+                        <strong>Prof. {doubt.mentionedFaculty.name}</strong>
+                     </div>
+                   )}
+
+                   <p style={{ margin: '0 0 16px', color: 'var(--text-main)', fontStyle: 'italic', lineHeight: '1.5', fontSize: '1rem' }}>"{doubt.content}"</p>
+                   
+                   {doubt.fileUrl && (
+                    <a href={`http://localhost:5000/uploads/${doubt.fileUrl}`} target="_blank" rel="noreferrer" className="announcement-link" style={{ marginBottom: '16px', display: 'block', textAlign: 'center', borderColor: 'var(--accent-student)', color: 'var(--accent-student)', background: 'rgba(239, 68, 68, 0.05)' }}>
+                      🔍 View Supporting Asset
+                    </a>
+                   )}
+
+                   {/* Replies Section */}
+                   <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '12px', padding: '12px', marginBottom: '16px' }}>
+                      <p style={{ margin: '0 0 12px', fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Discussion Thread</p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {doubt.comments?.map(comment => (
+                          <div key={comment._id} style={{ fontSize: '0.85rem', borderLeft: '2px solid var(--border-subtle)', paddingLeft: '12px' }}>
+                            <div style={{ display: 'flex', gap: '8px', marginBottom: '4px' }}>
+                              <strong style={{ color: comment.postedBy?.role === 'faculty' ? 'var(--accent-faculty)' : 'var(--text-main)' }}>
+                                {comment.postedBy?.name}
+                              </strong>
+                              <span style={{ color: 'var(--text-dim)', fontSize: '0.75rem' }}>{new Date(comment.createdAt).toLocaleDateString()}</span>
+                            </div>
+                            <p style={{ margin: 0, color: 'var(--text-muted)' }}>{comment.text}</p>
+                          </div>
+                        ))}
+                        {(!doubt.comments || doubt.comments.length === 0) && <p style={{ margin: 0, color: 'var(--text-dim)', fontSize: '0.8rem', fontStyle: 'italic' }}>No replies yet. Be the first to help!</p>}
+                      </div>
+                   </div>
+
+                   {/* Reply Input */}
+                   <div style={{ display: 'flex', gap: '10px' }}>
+                      <input 
+                        placeholder="Write a reply..."
+                        value={replyInputs[doubt._id] || ""}
+                        onChange={(e) => setReplyInputs({ ...replyInputs, [doubt._id]: e.target.value })}
+                        style={{ flex: 1, background: '#1a1b1e', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '8px 12px', color: 'white', fontSize: '0.85rem' }}
+                      />
+                      <button className="primary-btn" style={{ padding: '8px 16px', fontSize: '0.8rem' }} onClick={() => handleAddReply(doubt._id)}>Reply</button>
+                   </div>
+
+                   <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '12px', marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Posted {new Date(doubt.createdAt).toLocaleDateString()}</span>
+                      <span style={{ color: doubt.comments?.length > 0 ? '#10b981' : 'var(--accent-student)', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                        {doubt.comments?.length > 0 ? 'DISCUSSION ACTIVE' : 'AWAITING HELP'}
+                      </span>
                    </div>
                 </div>
               ))}

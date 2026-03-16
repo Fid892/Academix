@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./FacultyDashboard.css";
 import "./Dashboard.css";
+import NotificationDropdown from "./NotificationDropdown";
 
 function FacultyDashboard() {
   const navigate = useNavigate();
@@ -93,7 +94,8 @@ function FacultyDashboard() {
           <h2>ACADEMIX</h2>
           <span className="sub-title" style={{ color: 'var(--accent-faculty)' }}>FACULTY PORTAL</span>
         </div>
-        <div className="header-right">
+        <div className="header-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <NotificationDropdown />
           <button className="logout-btn" onClick={() => { window.location.href = "http://localhost:5000/api/auth/logout"; }}>
             Sign Out
           </button>
@@ -102,7 +104,7 @@ function FacultyDashboard() {
 
       {view === "dashboard" && (
         <>
-          <div className="faculty-welcome-banner">
+          <div className="faculty-welcome-banner" onClick={() => navigate("/profile")} style={{ cursor: 'pointer' }}>
             <div className="welcome-avatar">{initials}</div>
             <div className="welcome-text">
               <p style={{ color: 'var(--accent-faculty)', fontWeight: 'bold', margin: '0 0 8px', letterSpacing: '0.1em' }}>Welcome Professor,</p>

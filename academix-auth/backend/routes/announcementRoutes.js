@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const Announcement = require("../models/Announcement");
+const Notification = require("../models/Notification");
 const { isAuthenticated, isAdmin, isFaculty } = require("../middleware/auth");
 const multer = require("multer");
 
@@ -260,6 +261,21 @@ router.patch(
 
       if (!updated) {
         return res.status(404).json({ message: "Announcement not found" });
+      }
+
+      // Notify the requester
+      try {
+        const newNotif = new Notification({
+          recipient: updated.postedBy,
+          sender: req.user._id,
+          type: "announcement",
+          title: "Post Approved! 🚀",
+          message: `Your post "${updated.title.substring(0, 20)}..." has been approved and is now live.`,
+          link: "/dashboard"
+        });
+        await newNotif.save();
+      } catch (err) {
+        console.error("Approval notification error:", err);
       }
 
       res.status(200).json({

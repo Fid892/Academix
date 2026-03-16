@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./Dashboard.css";
 import { useNavigate } from "react-router-dom";
+import NotificationDropdown from "./NotificationDropdown";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -94,12 +95,19 @@ function Dashboard() {
 
   return (
     <div className="student-container">
-      <div className="student-header">
+      {/* Background Decorations */}
+      <div className="dashboard-bg">
+        <div className="bg-glow bg-glow-1"></div>
+        <div className="bg-glow bg-glow-2"></div>
+      </div>
+
+      <div className="student-header animate-fade-in-down">
         <div className="header-left">
           <h2>ACADEMIX</h2>
           <span className="sub-title" style={{ color: 'var(--accent-student)', fontWeight: 'bold', fontSize: '0.8rem', letterSpacing: '0.1em' }}>STUDENT PORTAL</span>
         </div>
-        <div className="header-right">
+        <div className="header-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <NotificationDropdown />
           <button className="logout-btn" onClick={() => { window.location.href = "http://localhost:5000/api/auth/logout"; }}>
             Sign Out
           </button>
@@ -108,33 +116,28 @@ function Dashboard() {
 
       {view === "dashboard" && (
         <>
-          <div style={{ marginBottom: '60px' }}>
-            <p style={{ color: 'var(--accent-student)', fontWeight: '600', marginBottom: '8px', fontSize: '1rem' }}>Welcome back,</p>
-            <h1 style={{ fontSize: '3.5rem', margin: 0, fontWeight: '800', letterSpacing: '-0.03em' }}>
+          <div className="welcome-section animate-fade-in-up">
+            <p className="welcome-label">Welcome back,</p>
+            <h1 className="welcome-name">
                {user?.name ? user.name : "Student"}
             </h1>
           </div>
 
           <div className="card-grid">
-            <div className="dashboard-card" onClick={() => setShowModal(true)}>
-              <div className="plus-icon">+</div>
+            <div className="animate-card-1"><ProfileCard user={user} /></div>
+            <div className="dashboard-card animate-card-2" onClick={() => setShowModal(true)}>
+              <div className="plus-icon"><span>+</span></div>
               <h3>Create Post</h3>
               <p>Propose a new announcement for approval</p>
             </div>
 
-            <div className="dashboard-card" onClick={() => navigate("/study-groups")}>
+            <div className="dashboard-card animate-card-3" onClick={() => navigate("/study-groups")}>
                <div className="plus-icon" style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)' }}>👥</div>
               <h3>Study Groups</h3>
               <p>Discuss, share notes and collaborate</p>
             </div>
 
-            <div className="dashboard-card" onClick={() => navigate("/doubts")}>
-               <div className="plus-icon" style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)' }}>❓</div>
-              <h3>Ask Question</h3>
-              <p>Get your academic doubts resolved by faculty</p>
-            </div>
-
-            <div className="dashboard-card" onClick={() => setView("student")}>
+            <div className="dashboard-card animate-card-4" onClick={() => setView("student")}>
               <div className="plus-icon" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>📢</div>
               <h3>Student Feed</h3>
               <p>View community announcements</p>
@@ -146,13 +149,21 @@ function Dashboard() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                    <h2 className="faculty-section-title" style={{ borderLeftColor: 'var(--accent-student)', margin: 0 }}>Official Notices</h2>
                 </div>
-                {adminAnnouncements.map(a => <AnnouncementCard key={a._id} a={a} />)}
+                {adminAnnouncements.map((a, i) => (
+                  <div key={a._id} className="animate-fade-in-up" style={{ animationDelay: `${0.6 + i * 0.1}s`, opacity: 0, animationFillMode: 'forwards' }}>
+                    <AnnouncementCard a={a} />
+                  </div>
+                ))}
                 {adminAnnouncements.length === 0 && <div className="faculty-empty">No official notices today.</div>}
              </section>
 
              <section>
                 <h2 className="faculty-section-title" style={{ borderLeftColor: 'var(--accent-faculty)', marginBottom: '32px' }}>Faculty Posting</h2>
-                {facultyAnnouncements.map(a => <AnnouncementCard key={a._id} a={a} showFacultyInfo />)}
+                {facultyAnnouncements.map((a, i) => (
+                  <div key={a._id} className="animate-fade-in-up" style={{ animationDelay: `${0.8 + i * 0.1}s`, opacity: 0, animationFillMode: 'forwards' }}>
+                    <AnnouncementCard a={a} showFacultyInfo />
+                  </div>
+                ))}
                 {facultyAnnouncements.length === 0 && <div className="faculty-empty">No faculty updates yet.</div>}
              </section>
           </div>
@@ -234,5 +245,33 @@ const AnnouncementCard = ({ a, showFacultyInfo }) => (
     )}
   </div>
 );
+
+const ProfileCard = ({ user }) => {
+  const navigate = useNavigate();
+  if (!user) return null;
+  const initials = user.name.split(" ").map(n => n[0]).join("").toUpperCase();
+  
+  return (
+    <div className="profile-card" onClick={() => navigate("/profile")} style={{ cursor: 'pointer' }}>
+      <div className="profile-header">
+        <div className="profile-avatar">{initials}</div>
+        <div className="profile-info">
+          <h3>{user.name}</h3>
+          <p className="profile-role">{user.role || "Student"}</p>
+        </div>
+      </div>
+      <div className="profile-details">
+        <div className="detail-item">
+          <span className="detail-label">{user.role === 'faculty' ? 'Department' : 'Department'}</span>
+          <span className="detail-value">{user.department || "N/A"}</span>
+        </div>
+        <div className="detail-item">
+          <span className="detail-label">{user.role === 'faculty' ? 'Designation' : 'Semester'}</span>
+          <span className="detail-value">{user.role === 'faculty' ? user.designation : user.semester || "N/A"}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default Dashboard;

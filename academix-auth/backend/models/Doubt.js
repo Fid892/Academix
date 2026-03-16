@@ -29,6 +29,19 @@ const doubtSchema = new mongoose.Schema(
       type: String,
       enum: ["open", "resolved"],
       default: "open"
+    },
+    
+    isAnonymous: {
+      type: Boolean,
+      default: false
+    },
+
+    fileUrl: {
+      type: String
+    },
+
+    fileName: {
+      type: String
     }
   },
   {

@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const StudyGroup = require("../models/StudyGroup");
 const GroupPost = require("../models/GroupPost");
+const Notification = require("../models/Notification");
 const { isAuthenticated } = require("../middleware/auth");
 const multer = require("multer");
 const path = require("path");
@@ -147,6 +148,7 @@ router.get("/:id/posts", async (req, res) => {
   try {
     const posts = await GroupPost.find({ groupId: req.params.id })
       .populate("postedBy", "name role department")
+      .populate("mentionedFaculty", "name department designation")
       .populate("comments.postedBy", "name role")
       .sort({ createdAt: -1 });
 
@@ -166,7 +168,7 @@ router.post(
   upload.single("file"),
   async (req, res) => {
     try {
-      const { content, type, noteCategory } = req.body;
+      const { content, type, noteCategory, mentionedFaculty } = req.body;
 
       /* Faculty can only upload to faculty noteCategory */
       const resolvedCategory =
@@ -179,18 +181,38 @@ router.post(
         });
       }
 
+      /* Check if type is doubt and handle mentionedFaculty specifically */
       const post = new GroupPost({
         groupId: req.params.id,
         content: content || "",
         postedBy: req.user._id,
         type: type || "post",
         noteCategory: type === "note" ? resolvedCategory : "student",
+        mentionedFaculty: (type === "doubt" && mentionedFaculty) ? mentionedFaculty : null,
         fileUrl: req.file ? req.file.filename : null,
         fileName: req.file ? req.file.originalname : null,
         comments: []
       });
 
       await post.save();
+
+      // Notify mentioned faculty
+      if (type === "doubt" && mentionedFaculty) {
+        try {
+          const group = await StudyGroup.findById(req.params.id);
+          const newNotif = new Notification({
+            recipient: mentionedFaculty,
+            sender: req.user._id,
+            type: "doubt_reply", // Reuse or add group_doubt type
+            title: "You were mentioned in a Doubt",
+            message: `${req.user.name} mentioned you in a doubt in group: ${group.name}`,
+            link: `/study-groups/${req.params.id}`
+          });
+          await newNotif.save();
+        } catch (err) {
+          console.error("Mention notification error:", err);
+        }
+      }
 
       const populated = await GroupPost.findById(post._id)
         .populate("postedBy", "name role department");
@@ -227,6 +249,23 @@ router.post("/:id/posts/:postId/comments", isAuthenticated, async (req, res) => 
 
     await post.save();
 
+    // Notify the post author
+    if (post.postedBy.toString() !== req.user._id.toString()) {
+      try {
+        const newNotif = new Notification({
+          recipient: post.postedBy,
+          sender: req.user._id,
+          type: "system",
+          title: "New Comment on Your Post",
+          message: `${req.user.name} commented on your post`,
+          link: `/study-groups/${req.params.id}`
+        });
+        await newNotif.save();
+      } catch (err) {
+        console.error("Comment notification error:", err);
+      }
+    }
+
     const updated = await GroupPost.findById(post._id)
       .populate("postedBy", "name role department")
       .populate("comments.postedBy", "name role");
@@ -256,6 +295,19 @@ router.delete("/:id/posts/:postId", isAuthenticated, async (req, res) => {
 
     await GroupPost.findByIdAndDelete(req.params.postId);
     res.json({ message: "Post deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+});
+
+/* ============================
+   GET Faculty List (for Mentions)
+============================ */
+router.get("/faculties/list", isAuthenticated, async (req, res) => {
+  try {
+    const User = require("../models/User");
+    const faculties = await User.find({ role: "faculty" }).select("name department designation");
+    res.json(faculties);
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }

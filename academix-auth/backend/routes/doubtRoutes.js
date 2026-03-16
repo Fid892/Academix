@@ -1,7 +1,16 @@
 const router = require("express").Router();
 const Doubt = require("../models/Doubt");
 const DoubtReply = require("../models/DoubtReply");
+const Notification = require("../models/Notification");
 const { isAuthenticated } = require("../middleware/auth");
+const multer = require("multer");
+const storage = multer.diskStorage({
+  destination: "uploads/",
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "-" + file.originalname);
+  }
+});
+const upload = multer({ storage });
 
 /* ============================
    GET All Doubts
@@ -13,7 +22,15 @@ router.get("/", isAuthenticated, async (req, res) => {
       .populate("postedBy", "name role department")
       .sort({ createdAt: -1 });
 
-    res.status(200).json(doubts);
+    const processed = doubts.map(d => {
+        const obj = d.toObject();
+        if (obj.isAnonymous && (!req.user || (obj.postedBy?._id?.toString() !== req.user._id?.toString() && req.user.role !== 'faculty'))) {
+            if (obj.postedBy) obj.postedBy.name = "Anonymous Student";
+        }
+        return obj;
+    });
+
+    res.status(200).json(processed);
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
@@ -36,7 +53,12 @@ router.get("/:id", isAuthenticated, async (req, res) => {
       .populate("postedBy", "name role department")
       .sort({ createdAt: 1 });
 
-    res.status(200).json({ doubt, replies });
+    const obj = doubt.toObject();
+    if (obj.isAnonymous && (!req.user || (obj.postedBy?._id?.toString() !== req.user._id?.toString() && req.user.role !== 'faculty'))) {
+        if (obj.postedBy) obj.postedBy.name = "Anonymous Student";
+    }
+
+    res.status(200).json({ doubt: obj, replies });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
@@ -46,7 +68,7 @@ router.get("/:id", isAuthenticated, async (req, res) => {
    POST Create Doubt (Students Only)
 ============================ */
 
-router.post("/", isAuthenticated, async (req, res) => {
+router.post("/", isAuthenticated, upload.single("file"), async (req, res) => {
   try {
     if (req.user.role === "faculty") {
       return res.status(403).json({
@@ -54,7 +76,7 @@ router.post("/", isAuthenticated, async (req, res) => {
       });
     }
 
-    const { title, description, subject } = req.body;
+    const { title, description, subject, isAnonymous } = req.body;
 
     if (!title || !description) {
       return res.status(400).json({ message: "Title and description are required" });
@@ -65,7 +87,10 @@ router.post("/", isAuthenticated, async (req, res) => {
       description,
       subject,
       postedBy: req.user._id,
-      status: "open"
+      status: "open",
+      isAnonymous: isAnonymous === "true" || isAnonymous === true || false,
+      fileUrl: req.file ? req.file.filename : null,
+      fileName: req.file ? req.file.originalname : null
     });
 
     await doubt.save();
@@ -108,6 +133,23 @@ router.post("/:id/reply", isAuthenticated, async (req, res) => {
     });
 
     await reply.save();
+
+    // Notify the doubt poster
+    if (doubt.postedBy.toString() !== req.user._id.toString()) {
+      try {
+        const newNotif = new Notification({
+          recipient: doubt.postedBy,
+          sender: req.user._id,
+          type: "doubt_reply",
+          title: "New Reply to Your Doubt",
+          message: `${req.user.name} replied to: "${doubt.title.substring(0, 20)}..."`,
+          link: `/doubts/${doubt._id}`
+        });
+        await newNotif.save();
+      } catch (err) {
+        console.error("Notification error:", err);
+      }
+    }
 
     /* When faculty replies → mark doubt as resolved */
     if (isFaculty) {

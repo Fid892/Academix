@@ -27,8 +27,13 @@ app.use(express.json());
 
 app.use(session({
   secret: "academixsecret",
-  resave: false,
-  saveUninitialized: false
+  resave: true,
+  saveUninitialized: true,
+  cookie: {
+    secure: false, // Set to true if using HTTPS
+    httpOnly: true,
+    sameSite: 'lax'
+  }
 }));
 
 app.use(passport.initialize());
@@ -57,6 +62,9 @@ app.use("/api/announcements", require("./routes/announcementRoutes"));
 app.use("/api/departments", departmentRoutes);
 app.use("/api/study-groups", require("./routes/studyGroupRoutes"));
 app.use("/api/doubts", require("./routes/doubtRoutes"));
+app.use("/api/profile", require("./routes/profileRoutes"));
+app.use("/api/notifications", require("./routes/notificationRoutes"));
+
 
 /* =============================
    Start Server

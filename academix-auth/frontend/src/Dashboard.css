@@ -7,6 +7,44 @@
   margin: 0 auto;
   padding: 40px 20px;
   min-height: 100vh;
+  position: relative;
+  z-index: 2;
+}
+
+/* Dashboard Background Decorations */
+.dashboard-bg {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: -1;
+  background: #080000;
+  overflow: hidden;
+}
+
+.bg-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.15;
+}
+
+.bg-glow-1 {
+  width: 500px; height: 500px;
+  background: var(--accent-student);
+  top: -100px; right: -100px;
+  animation: floatBg 20s infinite alternate ease-in-out;
+}
+
+.bg-glow-2 {
+  width: 400px; height: 400px;
+  background: var(--accent-primary);
+  bottom: -50px; left: -100px;
+  animation: floatBg 25s infinite alternate-reverse ease-in-out;
+}
+
+@keyframes floatBg {
+  from { transform: translate(0, 0); }
+  to { transform: translate(-100px, 50px); }
 }
 
 /* Header Re-design */
@@ -25,6 +63,7 @@
   letter-spacing: -0.025em;
   background: linear-gradient(to right, #fff, #94a3b8);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -55,12 +94,14 @@
 }
 
 .dashboard-card {
-  background: var(--bg-card);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   padding: 32px;
-  border-radius: 24px;
-  border: 1px solid var(--border-subtle);
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   cursor: pointer;
-  transition: var(--transition);
+  transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
   display: flex;
   flex-direction: column;
   position: relative;
@@ -68,16 +109,31 @@
 }
 
 .dashboard-card:hover {
-  transform: translateY(-8px);
-  background: var(--bg-card-hover);
-  border-color: rgba(99, 102, 241, 0.3);
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
+  transform: translateY(-10px) scale(1.02);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 46, 46, 0.3);
+  box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.6);
+}
+
+.dashboard-card::after {
+  content: "";
+  position: absolute;
+  top: -50%; left: -50%; width: 200%; height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.03), transparent);
+  transform: rotate(45deg);
+  pointer-events: none;
+  transition: 0.8s;
+}
+
+.dashboard-card:hover::after {
+  left: 100%;
 }
 
 .dashboard-card h3 {
-  font-size: 1.25rem;
+  font-size: 1.35rem;
   margin: 0 0 12px;
   font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .dashboard-card p {
@@ -88,16 +144,21 @@
 }
 
 .plus-icon {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-  border-radius: 16px;
+  width: 54px;
+  height: 54px;
+  background: linear-gradient(135deg, var(--accent-student), #b91c1c);
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  margin-bottom: 20px;
-  box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+  font-size: 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);
+  transition: transform 0.4s ease;
+}
+
+.dashboard-card:hover .plus-icon {
+  transform: rotate(90deg) scale(1.1);
 }
 
 /* Announcement Cards Re-style */
@@ -282,4 +343,143 @@
 .back-button:hover {
   background: var(--bg-card-hover);
   padding-left: 25px;
+}
+
+/* Profile Card Styles */
+/* Profile Card Enhancements */
+.profile-card {
+  background: rgba(255, 255, 255, 0.04) !important;
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 32px !important;
+  padding: 32px !important;
+  transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  min-height: 200px;
+}
+
+.profile-card:hover {
+  transform: translateY(-10px) scale(1.02);
+  border-color: var(--accent-student) !important;
+  box-shadow: 0 30px 60px -10px rgba(239, 68, 68, 0.3) !important;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.profile-avatar {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, var(--accent-student), #b91c1c);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: white;
+  box-shadow: 0 8px 16px rgba(239, 68, 68, 0.2);
+}
+
+.profile-info h3 {
+  font-size: 1.25rem;
+  margin: 0;
+  font-weight: 700;
+  color: #fff;
+}
+
+.profile-role {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent-student);
+  letter-spacing: 0.05em;
+  margin: 4px 0 0;
+  text-transform: uppercase;
+}
+
+.profile-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-label {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.detail-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* Animations */
+.animate-fade-in-down {
+  animation: fadeInDown 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-card-1 { animation: cardIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: 0.2s; opacity: 0; }
+.animate-card-2 { animation: cardIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: 0.3s; opacity: 0; }
+.animate-card-3 { animation: cardIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: 0.4s; opacity: 0; }
+.animate-card-4 { animation: cardIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: 0.5s; opacity: 0; }
+
+@keyframes cardIn {
+  from { opacity: 0; transform: scale(0.9) translateY(40px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.welcome-section {
+  margin-bottom: 60px;
+}
+
+.welcome-label {
+  color: var(--accent-student);
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 1.1rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.welcome-name {
+  font-size: 4rem;
+  margin: 0;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  background: linear-gradient(to bottom, #fff, #94a3b8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
