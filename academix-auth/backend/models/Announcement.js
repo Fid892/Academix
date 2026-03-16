@@ -52,6 +52,18 @@ const announcementSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true
+    },
+
+    target: {
+      type: String,
+      enum: ["student", "faculty", "all"],
+      default: "student"
+    },
+
+    postedByRole: {
+      type: String,
+      enum: ["student", "faculty", "admin", "mainAdmin"],
+      default: "student"
     }
   },
   {

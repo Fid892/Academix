@@ -35,7 +35,10 @@ passport.use(
             name: profile.displayName,
             email: email,
             googleId: profile.id,
-            role: allowedUser.role
+            role: allowedUser.role,
+            department: allowedUser.department,
+            semester: allowedUser.semester,
+            designation: allowedUser.designation
           });
         }
 

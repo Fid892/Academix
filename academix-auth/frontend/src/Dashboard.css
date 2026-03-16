@@ -1,312 +1,285 @@
-body {
-  margin: 0;
-  background: #0f0f0f;
-  font-family: 'Segoe UI', sans-serif;
-}
-
-/* =========================
-   Main Container
-========================= */
+/* ============================================================
+   RE-VAMPED Dashboard.css (Pro Components)
+============================================================ */
 
 .student-container {
-  color: white;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 20px;
   min-height: 100vh;
-  padding: 30px;
 }
 
-/* =========================
-   Header
-========================= */
-
+/* Header Re-design */
 .student-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
-}
-
-.student-header h2 {
-  margin: 0;
-  font-weight: 600;
-}
-
-/* =========================
-   Welcome Title
-========================= */
-
-.welcome-title {
-  margin-bottom: 25px;
-  font-size: 28px;
-  font-weight: 600;
-}
-
-/* =========================
-   Dashboard Cards Grid
-========================= */
-
-.card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
+  padding-bottom: 30px;
+  border-bottom: 1px solid var(--border-subtle);
   margin-bottom: 40px;
 }
 
-.dashboard-card {
-  background: #1c1c1c;
-  padding: 25px;
-  border-radius: 14px;
+.student-header h2 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  background: linear-gradient(to right, #fff, #94a3b8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.logout-btn {
+  padding: 10px 24px;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  background: var(--glass-bg);
+  color: var(--text-main);
+  font-weight: 500;
   cursor: pointer;
-  transition: 0.25s ease;
-  border: 1px solid transparent;
+  transition: var(--transition);
+  backdrop-filter: blur(8px);
+}
+
+.logout-btn:hover {
+  background: var(--accent-student);
+  border-color: var(--accent-student);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+}
+
+/* Dashboard Cards - Premium Feel */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 60px;
+}
+
+.dashboard-card {
+  background: var(--bg-card);
+  padding: 32px;
+  border-radius: 24px;
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
 }
 
 .dashboard-card:hover {
-  border: 1px solid #ff3b3b;
-  transform: translateY(-4px);
+  transform: translateY(-8px);
+  background: var(--bg-card-hover);
+  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
 }
 
 .dashboard-card h3 {
-  margin: 10px 0 5px 0;
+  font-size: 1.25rem;
+  margin: 0 0 12px;
+  font-weight: 700;
 }
 
 .dashboard-card p {
-  color: #aaa;
-  font-size: 14px;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 0;
 }
 
 .plus-icon {
-  width: 35px;
-  height: 35px;
-  border-radius: 8px;
-  background: #ff3b3b;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
-}
-
-/* =========================
-   Section Titles
-========================= */
-
-.section-title {
-  margin-bottom: 15px;
-  font-size: 20px;
-}
-
-/* =========================
-   Announcement Cards
-========================= */
-
-.announcement-card {
-  background: #1c1c1c;
-  padding: 20px;
-  border-radius: 12px;
+  font-size: 24px;
   margin-bottom: 20px;
-  border: 1px solid #2a2a2a;
-  transition: 0.2s;
+  box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+}
+
+/* Announcement Cards Re-style */
+.announcement-card {
+  background: var(--bg-card);
+  padding: 30px;
+  border-radius: 20px;
+  border: 1px solid var(--border-subtle);
+  margin-bottom: 24px;
+  transition: var(--transition);
 }
 
 .announcement-card:hover {
-  border: 1px solid #ff3b3b;
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: var(--shadow-lg);
 }
 
 .announcement-card h3 {
-  margin: 0 0 10px 0;
+  font-size: 1.4rem;
+  margin-bottom: 16px;
 }
 
 .announcement-card p {
-  color: #ccc;
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  line-height: 1.7;
 }
 
-.announcement-card img {
-  width: 100%;
-  margin-top: 10px;
-  border-radius: 8px;
-}
-
-.announcement-card small {
-  display: block;
-  margin-top: 10px;
-  color: #888;
-}
-
-/* =========================
-   Empty Box (My Announcements)
-========================= */
-
-.empty-box {
-  background: #1c1c1c;
-  padding: 40px;
-  border-radius: 12px;
-  text-align: center;
-}
-
-.empty-box p {
-  margin-bottom: 20px;
-  color: #aaa;
-}
-
-.empty-box button {
-  background: #ff3b3b;
-  border: none;
-  padding: 12px 25px;
-  border-radius: 6px;
-  color: white;
-  cursor: pointer;
-}
-
-/* =========================
-   Modal
-========================= */
-
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.7);
-  display: flex;
-  justify-content: center;
+.announcement-link {
+  color: var(--accent-primary);
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
   align-items: center;
-  z-index: 1000;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 8px;
+  margin-top: 15px;
+}
+
+/* Modern Tabs */
+.section-tabs {
+  display: flex;
+  gap: 8px;
+  background: var(--bg-sidebar);
+  padding: 6px;
+  border-radius: 16px;
+  width: fit-content;
+  margin-bottom: 32px;
+  border: 1px solid var(--border-subtle);
+}
+
+.tab-btn {
+  padding: 10px 24px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.tab-btn.active {
+  background: var(--accent-primary);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+/* Modern Modals */
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
 }
 
 .modal-box {
-  width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-  background: #161616;
-  border-radius: 14px;
-  padding: 30px;
+  background: #1a1b1e;
+  border: 1px solid var(--glass-border);
+  border-radius: 32px;
+  padding: 40px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
-.modal-box h2 {
-  margin-top: 0;
-}
-
-.modal-box input,
-.modal-box textarea,
+.modal-box input, 
+.modal-box textarea, 
 .modal-box select {
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 15px;
-  background: #222;
-  border: none;
-  color: white;
-  border-radius: 8px;
+  background: #25262b;
+  border: 1px solid var(--border-subtle);
+  color: #fff;
+  padding: 16px;
+  border-radius: 14px;
+  font-size: 1rem;
+  transition: var(--transition);
 }
 
-.modal-box textarea {
-  height: 100px;
-  resize: none;
+.modal-box input:focus {
+  border-color: var(--accent-primary);
+  background: #2c2e33;
+  outline: none;
 }
 
-.date-row {
-  display: flex;
-  gap: 10px;
-}
-
-.toggle-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
-}
-
+/* Buttons */
 .primary-btn {
-  background: #ff3b3b;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  color: #fff;
+  padding: 14px 28px;
+  border-radius: 14px;
   border: none;
-  padding: 10px 25px;
-  color: white;
-  border-radius: 6px;
+  font-weight: 700;
   cursor: pointer;
+  transition: var(--transition);
+}
+
+.primary-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
 }
 
 .secondary-btn {
-  background: transparent;
-  border: 1px solid #888;
-  padding: 10px 25px;
-  color: white;
-  border-radius: 6px;
+  background: #25262b;
+  border: 1px solid var(--border-subtle);
+  color: #fff;
+  padding: 14px 28px;
+  border-radius: 14px;
+  font-weight: 600;
   cursor: pointer;
 }
 
-/* =========================
-   Back Button
-========================= */
+/* Status Badges */
+.status-badge {
+  padding: 6px 14px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
 
-button {
-  cursor: pointer;
+.status-badge.open {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.status-badge.resolved {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* Faculty specific re-styling in student view */
+.faculty-info-box {
+  margin-top: 20px;
+  padding: 16px;
+  background: rgba(99, 102, 241, 0.05);
+  border-radius: 12px;
+  border-left: 4px solid var(--accent-primary);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Back Button */
+.back-btn-container {
+  margin-bottom: 30px;
 }
 
 .back-button {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: #1a1a1a;
-  color: #ffffff;
-  border: 1px solid #222;
-  border-radius: 25px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.3s ease;
+  gap: 10px;
+  padding: 10px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  color: var(--text-main);
+  font-weight: 600;
+  transition: var(--transition);
 }
 
 .back-button:hover {
-  background: #ff3b3b;
-  color: #ffffff;
-  border-color: #ff3b3b;
-  box-shadow: 0 0 12px rgba(255, 59, 59, 0.4);
-}
-
-.back-arrow {
-  font-size: 16px;
-  transition: transform 0.3s ease;
-}
-
-.back-button:hover .back-arrow {
-  transform: translateX(-3px);
-}
-
-.student-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-left {
-  display: flex;
-  flex-direction: column;
-}
-
-.sub-title {
-  font-size: 12px;
-  color: #888;
-  margin-top: 2px;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-}
-
-.logout-btn {
-  background: transparent;
-  border: 1px solid #444;
-  color: white;
-  padding: 6px 14px;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: 0.3s ease;
-}
-
-.logout-btn:hover {
-  background: #ff3b3b;
-  border-color: #ff3b3b;
+  background: var(--bg-card-hover);
+  padding-left: 25px;
 }

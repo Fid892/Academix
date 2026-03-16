@@ -5,6 +5,9 @@ const userSchema = new mongoose.Schema({
   email: String,
   googleId: String,
   role: String,
+  department: String,
+  semester: String,
+  designation: String,
   createdAt: {
     type: Date,
     default: Date.now

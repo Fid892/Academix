@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import "./Admin.css";
 import { useNavigate } from "react-router-dom";
 import ManageGroups from "./ManageGroups";
+import ManageUsers from "./ManageUsers";
 function Admin() {
 
   const navigate = useNavigate();
@@ -45,7 +46,8 @@ function Admin() {
     startDate: "",
     endDate: "",
     includeImage: false,
-    image: null
+    image: null,
+    target: "student" // Default to student
   });
 
   const [preview, setPreview] = useState(null);
@@ -55,8 +57,18 @@ function Admin() {
   ============================== */
 
   useEffect(() => {
+    checkToken();
     loadAll();
   }, []);
+
+  const checkToken = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/auth/current-user", { credentials: "include" });
+      if (!res.ok) navigate("/login");
+    } catch {
+      navigate("/login");
+    }
+  };
 
   const loadAll = async () => {
     await Promise.all([
@@ -119,6 +131,8 @@ function Admin() {
     }
   };
 
+
+
   /* ==============================
      Approve / Reject
   ============================== */
@@ -164,6 +178,8 @@ function Admin() {
       form.append("endDate", noticeForm.endDate);
     }
 
+    form.append("target", noticeForm.target); // Added target field
+
     if (noticeForm.includeImage && noticeForm.image) {
       form.append("image", noticeForm.image);
     }
@@ -192,7 +208,8 @@ function Admin() {
       startDate: "",
       endDate: "",
       includeImage: false,
-      image: null
+      image: null,
+      target: "student"
     });
     setPreview(null);
   };
@@ -220,38 +237,46 @@ function Admin() {
             className={activeSection === "dashboard" ? "active" : ""}
             onClick={() => setActiveSection("dashboard")}
           >
-            Dashboard
+            📊 Dashboard
           </li>
 
           <li
             className={activeSection === "notice" ? "active" : ""}
             onClick={() => setActiveSection("notice")}
           >
-            Notice
+            📢 Official Notice
           </li>
 
           <li
             className={activeSection === "announcements" ? "active" : ""}
             onClick={() => setActiveSection("announcements")}
           >
-            Announcements
+            🎓 Student Posts
           </li>
 
           <li
             className={activeSection === "pending" ? "active" : ""}
             onClick={() => setActiveSection("pending")}
           >
-            Pending Requests
+            ⌛ Pending Requests
           </li>
+
           <li
             className={activeSection === "groups" ? "active" : ""}
             onClick={() => setActiveSection("groups")}
           >
-            Manage Groups
+            📁 Manage Groups
+          </li>
+          
+          <li
+            className={activeSection === "management" ? "active" : ""}
+            onClick={() => setActiveSection("management")}
+          >
+            👥 User Management
           </li>
 
-          <li className="logout-btn" onClick={handleLogout}>
-            Logout
+          <li className="logout-btn" style={{ marginTop: 'auto' }} onClick={handleLogout}>
+            🚪 Logout
           </li>
         </ul>
       </div>
@@ -269,17 +294,17 @@ function Admin() {
             <div className="stats-grid">
               <div className="stat-card">
                 <h3>{stats.totalStudents || 0}</h3>
-                <p>Total Students</p>
+                <p>Authorized Students</p>
               </div>
 
               <div className="stat-card">
                 <h3>{stats.totalAnnouncements || 0}</h3>
-                <p>Total Notices</p>
+                <p>Published Notices</p>
               </div>
 
               <div className="stat-card">
                 <h3>{stats.pendingRequests || 0}</h3>
-                <p>Pending Requests</p>
+                <p>Awaiting Approval</p>
               </div>
             </div>
           </>
@@ -291,41 +316,29 @@ function Admin() {
             <h3>Official Notices</h3>
 
             {officialAnnouncements.map(a => (
-                  <div key={a._id} className="announcement">
-    <h4>{a.title}</h4>
-    <p>{a.description}</p>
+                <div key={a._id} className="announcement" style={{ borderLeft: '4px solid var(--accent-student)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <h4 style={{ margin: 0 }}>{a.title}</h4>
+                    <span className="status-badge student" style={{ fontSize: '0.7rem' }}>{a.target?.toUpperCase() || 'ALL'}</span>
+                  </div>
+                  <p style={{ margin: '12px 0' }}>{a.description}</p>
 
-    {a.eventType && (
-      <p><strong>Type:</strong> {a.eventType}</p>
-    )}
+                  <div style={{ display: 'flex', gap: '16px', fontSize: '0.85rem', color: 'var(--text-dim)' }}>
+                    {a.eventType && <span>🏷️ {a.eventType}</span>}
+                    {a.venue && <span>📍 {a.venue}</span>}
+                    {a.startDate && <span>📅 {new Date(a.startDate).toLocaleDateString()}</span>}
+                  </div>
 
-    {a.venue && (
-      <p><strong>Venue:</strong> {a.venue}</p>
-    )}
-
-    {a.startDate && (
-      <p>
-        <strong>Date:</strong>{" "}
-        {new Date(a.startDate).toLocaleDateString()}
-        {a.endDate &&
-          ` - ${new Date(a.endDate).toLocaleDateString()}`}
-      </p>
-    )}
-
-    {a.image && (
-      <img
-        src={`http://localhost:5000/uploads/${a.image}`}
-        alt="notice"
-        style={{
-          width: "220px",
-          marginTop: "10px",
-          borderRadius: "8px"
-        }}
-      />
-    )}
+                  {a.image && (
+                    <img
+                      src={`http://localhost:5000/uploads/${a.image}`}
+                      alt="notice"
+                      style={{ width: "220px", marginTop: "16px", borderRadius: "12px", border: '1px solid var(--border-subtle)' }}
+                    />
+                  )}
                 </div>
             ))} 
-
+            {officialAnnouncements.length === 0 && <div className="faculty-empty">No official notices published yet.</div>}
             {/* Floating Add Button */}
             <button
               className="floating-add-btn"
@@ -392,6 +405,11 @@ function Admin() {
           <ManageGroups />
         )}
 
+        {/* MANAGE USERS */}
+        {activeSection === "management" && (
+          <ManageUsers />
+        )}
+
         {/* NOTICE MODAL */}
 {showNoticeModal && (
   <div className="notice-modal-overlay">
@@ -453,6 +471,21 @@ function Admin() {
               setNoticeForm({ ...noticeForm, venue: e.target.value })
             }
           />
+        </div>
+
+        <div className="row" style={{ marginBottom: "15px" }}>
+          <label style={{ marginRight: "10px" }}>Target Audience:</label>
+          <select
+            className="notice-select"
+            value={noticeForm.target}
+            onChange={(e) =>
+              setNoticeForm({ ...noticeForm, target: e.target.value })
+            }
+          >
+            <option value="student">Students Only</option>
+            <option value="faculty">Faculty Only</option>
+            <option value="all">All Users</option>
+          </select>
         </div>
 
         {/* Holiday Single Date */}

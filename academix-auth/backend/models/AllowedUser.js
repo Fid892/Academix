@@ -11,6 +11,18 @@ const allowedUserSchema = new mongoose.Schema({
     type: String,
     enum: ["student", "faculty", "admin"],
     required: true
+  },
+  name: String,
+  department: String,
+  semester: String,
+  designation: String,
+  createdByAdmin: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
 });
 

@@ -60,7 +60,7 @@ router.get(
     }
 
     if (req.user.role === "faculty") {
-      return res.redirect("http://localhost:3000/dashboard");
+      return res.redirect("http://localhost:3000/faculty-dashboard");
     }
 
     // Default = student
@@ -79,9 +79,11 @@ router.get("/current-user", (req, res) => {
   }
 
   return res.status(200).json({
+    _id: req.user._id,
     name: req.user.name,
     email: req.user.email,
-    role: req.user.role
+    role: req.user.role,
+    department: req.user.department || ""
   });
 });
 

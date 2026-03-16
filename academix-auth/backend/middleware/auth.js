@@ -20,3 +20,10 @@ exports.isMainAdmin = (req, res, next) => {
   }
   return res.status(403).json({ message: "Main admin access required" });
 };
+
+exports.isFaculty = (req, res, next) => {
+  if (req.user.role === "faculty") {
+    return next();
+  }
+  return res.status(403).json({ message: "Faculty access required" });
+};

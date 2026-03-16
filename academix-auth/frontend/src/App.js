@@ -2,7 +2,9 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Dashboard from "./Dashboard";
 import Admin from "./Admin";
 import ManageAnnouncements from "./ManageAnnouncements";
-import StudyGroups from "./StudyGroups";   // ✅ already imported
+import StudyGroups from "./StudyGroups";
+import FacultyDashboard from "./FacultyDashboard";
+import DoubtsPage from "./DoubtsPage";
 import "./Login.css";
 
 function Home() {
@@ -51,6 +53,12 @@ function App() {
 
         {/* ✅ NEW Study Groups Page */}
         <Route path="/study-groups" element={<StudyGroups />} />
+
+        {/* ✅ NEW Faculty Dashboard */}
+        <Route path="/faculty-dashboard" element={<FacultyDashboard />} />
+
+        {/* ✅ NEW Doubts Page */}
+        <Route path="/doubts" element={<DoubtsPage />} />
 
       </Routes>
     </Router>

@@ -41,6 +41,7 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected"))
   .catch(err => console.log(err));
 console.log("MONGO_URI:", process.env.MONGO_URI);
+
 /* =============================
    Static Upload Folder
 ============================= */
@@ -51,8 +52,11 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 ============================= */
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
+app.use("/api/admin/management", require("./routes/adminUserRoutes"));
 app.use("/api/announcements", require("./routes/announcementRoutes"));
 app.use("/api/departments", departmentRoutes);
+app.use("/api/study-groups", require("./routes/studyGroupRoutes"));
+app.use("/api/doubts", require("./routes/doubtRoutes"));
 
 /* =============================
    Start Server
