@@ -7,17 +7,37 @@ function StudyGroups() {
   const [groups, setGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [joinedGroupIds, setJoinedGroupIds] = useState(new Set());
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     fetchUser();
     fetchGroups();
   }, []);
 
+  const showToast = (message) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 3000);
+  };
+
   async function fetchUser() {
     try {
       const res = await fetch("http://localhost:5000/api/auth/current-user", { credentials: "include" });
       const data = await res.json();
       setUser(data);
+      if (data && data._id) {
+        fetchJoinedGroups(data._id);
+      }
+    } catch (err) { console.error(err); }
+  }
+
+  async function fetchJoinedGroups(userId) {
+    try {
+      const res = await fetch(`http://localhost:5000/api/profile/user/${userId}/groups`, { credentials: "include" });
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setJoinedGroupIds(new Set(data.map(g => g._id)));
+      }
     } catch (err) { console.error(err); }
   }
 
@@ -29,16 +49,34 @@ function StudyGroups() {
     } catch { setGroups([]); }
   }
 
-
+  const handleJoinSuccess = (groupId) => {
+    setJoinedGroupIds(prev => new Set([...prev, groupId]));
+  };
 
   if (selectedGroup) {
     return (
-      <GroupDiscussion group={selectedGroup} user={user} onBack={() => setSelectedGroup(null)} />
+      <GroupDiscussion 
+        group={selectedGroup} 
+        user={user} 
+        isMember={joinedGroupIds.has(selectedGroup._id)}
+        onBack={() => setSelectedGroup(null)} 
+      />
     );
   }
 
   return (
     <div className="student-container">
+      {/* Toast Notification */}
+      {toast && (
+        <div style={{
+          position: "fixed", top: "20px", right: "20px", background: "var(--accent-primary)",
+          color: "white", padding: "12px 24px", borderRadius: "12px", zIndex: 1000,
+          boxShadow: "0 10px 30px rgba(0,0,0,0.3)", animation: "slideIn 0.3s ease-out"
+        }}>
+          {toast}
+        </div>
+      )}
+
       <div className="student-header">
         <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <button className="back-button" style={{ padding: '8px 16px' }} onClick={() => window.history.back()}>
@@ -53,30 +91,16 @@ function StudyGroups() {
 
       <div className="card-grid">
         {groups.map((group) => (
-          <div className="dashboard-card" key={group._id} style={{ minHeight: '260px', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-              <div style={{ width: '40px', height: '40px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>
-                {group.groupType === "Processor Discussion Group" ? "⚙️" : "📚"}
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <span className="status-badge student" style={{ fontSize: '9px', display: 'block', marginBottom: '4px' }}>{group.subject}</span>
-                {group.semester && <span style={{ fontSize: '10px', opacity: 0.6 }}>Sem {group.semester}</span>}
-              </div>
-            </div>
-            <h3 style={{ fontSize: '1.2rem', marginBottom: '8px' }}>{group.name}</h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '16px', flex: 1 }}>
-              {group.description || "Academic discussion and resource sharing."}
-            </p>
-            <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', marginTop: 'auto' }}>
-                <button
-                className="primary-btn"
-                style={{ width: "100%", padding: '12px', fontSize: '0.9rem' }}
-                onClick={() => setSelectedGroup(group)}
-                >
-                Enter Discussion
-                </button>
-            </div>
-          </div>
+          <GroupCard 
+            key={group._id} 
+            group={group} 
+            isJoined={joinedGroupIds.has(group._id)}
+            onEnter={() => setSelectedGroup(group)}
+            onJoinSuccess={() => {
+                handleJoinSuccess(group._id);
+                showToast("Joined successfully");
+            }}
+          />
         ))}
       </div>
 
@@ -89,13 +113,84 @@ function StudyGroups() {
       <CreateGroupModal 
         isOpen={showCreateModal} 
         onClose={() => setShowCreateModal(false)} 
-        onCreated={fetchGroups} 
+        onCreated={() => {
+            fetchGroups();
+            if (user?._id) fetchJoinedGroups(user._id);
+        }} 
       />
     </div>
   );
 }
 
-function GroupDiscussion({ group, user, onBack }) {
+function GroupCard({ group, isJoined, onEnter, onJoinSuccess }) {
+  const [loading, setLoading] = useState(false);
+
+  async function handleJoin() {
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:5000/api/study-groups/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ groupId: group._id })
+      });
+      if (res.ok) {
+        onJoinSuccess();
+      } else {
+        const data = await res.json();
+        alert(data.message || "Failed to join group");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error joining group");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="dashboard-card" style={{ minHeight: '260px', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+        <div style={{ width: '40px', height: '40px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>
+          {group.groupType === "Processor Discussion Group" ? "⚙️" : "📚"}
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <span className="status-badge student" style={{ fontSize: '9px', display: 'block', marginBottom: '4px' }}>{group.subject}</span>
+          {group.semester && <span style={{ fontSize: '10px', opacity: 0.6 }}>Sem {group.semester}</span>}
+          <div style={{ fontSize: '10px', color: 'var(--text-dim)', marginTop: '4px' }}>
+            {group.membersCount || 0} members
+          </div>
+        </div>
+      </div>
+      <h3 style={{ fontSize: '1.2rem', marginBottom: '8px' }}>{group.name}</h3>
+      <p style={{ fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '16px', flex: 1 }}>
+        {group.description || "Academic discussion and resource sharing."}
+      </p>
+      <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', marginTop: 'auto' }}>
+        {isJoined ? (
+          <button
+            className="primary-btn"
+            style={{ width: "100%", padding: '12px', fontSize: '0.9rem', background: 'var(--accent-faculty)' }}
+            onClick={onEnter}
+          >
+            View Group
+          </button>
+        ) : (
+          <button
+            className="primary-btn"
+            style={{ width: "100%", padding: '12px', fontSize: '0.9rem' }}
+            onClick={handleJoin}
+            disabled={loading}
+          >
+            {loading ? "Joining..." : "Join Group"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function GroupDiscussion({ group, user, isMember, onBack }) {
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState("");
   const [noteFile, setNoteFile] = useState(null);
@@ -216,6 +311,32 @@ function GroupDiscussion({ group, user, onBack }) {
   const studentNotes = posts.filter(p => p.type === "note" && p.noteCategory === "student");
   const facultyNotes = posts.filter(p => p.type === "note" && p.noteCategory === "faculty");
   const doubts = posts.filter(p => p.type === "doubt");
+
+  if (!isMember) {
+    return (
+      <div className="student-container">
+        <div className="student-header">
+          <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <button className="back-button" style={{ padding: '8px 16px' }} onClick={onBack}>
+              ← Back
+            </button>
+            <h2 style={{ margin: 0 }}>{group.name}</h2>
+          </div>
+        </div>
+        <div style={{ 
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
+          height: '60vh', background: 'rgba(255,255,255,0.02)', borderRadius: '24px', 
+          border: '1px dashed var(--border-subtle)', margin: '40px 0', textAlign: 'center', padding: '40px'
+        }}>
+          <div style={{ fontSize: '64px', marginBottom: '24px' }}>🔒</div>
+          <h3 style={{ fontSize: '1.5rem', marginBottom: '12px' }}>Access Restricted</h3>
+          <p style={{ color: 'var(--text-dim)', maxWidth: '400px', lineHeight: '1.6' }}>
+            You must join the group to view discussions, access resources, and participate in doubts.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="student-container">

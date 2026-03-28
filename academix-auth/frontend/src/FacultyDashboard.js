@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "./FacultyDashboard.css";
 import "./Dashboard.css";
 import NotificationDropdown from "./NotificationDropdown";
+import SocialActions from "./SocialActions";
 
 function FacultyDashboard() {
   const navigate = useNavigate();
@@ -272,6 +273,8 @@ const FacultyAnnouncementCard = ({ a, isMyPost, showAuthor }) => (
         {a.venue && <span>📍 {a.venue}</span>}
       </div>
     )}
+
+    <SocialActions announcementId={a._id} link={a.link} />
 
     <div style={{ marginTop: '20px', borderTop: '1px solid var(--border-subtle)', paddingTop: '12px', textAlign: 'right' }}>
        <small style={{ color: 'var(--text-dim)' }}>

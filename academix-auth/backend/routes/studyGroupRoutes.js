@@ -2,6 +2,8 @@ const router = require("express").Router();
 const StudyGroup = require("../models/StudyGroup");
 const GroupPost = require("../models/GroupPost");
 const Notification = require("../models/Notification");
+const GroupMembership = require("../models/GroupMembership");
+const User = require("../models/User");
 const { isAuthenticated } = require("../middleware/auth");
 const multer = require("multer");
 const path = require("path");
@@ -310,6 +312,61 @@ router.get("/faculties/list", isAuthenticated, async (req, res) => {
     res.json(faculties);
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
+  }
+});
+
+/* ============================
+   JOIN Study Group
+ ============================ */
+router.post("/join", isAuthenticated, async (req, res) => {
+  try {
+    const { groupId } = req.body;
+    const userId = req.user._id;
+
+    if (!groupId) {
+      return res.status(400).json({ message: "Group ID is required" });
+    }
+
+    // Check if membership exists
+    const existing = await GroupMembership.findOne({ userId, groupId });
+    if (existing) {
+      return res.status(400).json({ message: "Already a member" });
+    }
+
+    // Insert into GroupMemberships
+    const membership = new GroupMembership({ userId, groupId });
+    await membership.save();
+
+    // Update User: add to joinedGroups
+    await User.findByIdAndUpdate(userId, {
+      $addToSet: { joinedGroups: groupId }
+    });
+
+    // Update StudyGroup: increment membersCount and add to members array
+    await StudyGroup.findByIdAndUpdate(groupId, {
+      $addToSet: { members: userId },
+      $inc: { membersCount: 1 }
+    });
+
+    res.status(200).json({ message: "Joined successfully" });
+  } catch (error) {
+    console.error("Join group error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+/* ============================
+   CHECK Membership Status
+ ============================ */
+router.get("/:id/is-member", isAuthenticated, async (req, res) => {
+  try {
+    const groupId = req.params.id;
+    const userId = req.user._id;
+
+    const membership = await GroupMembership.findOne({ userId, groupId });
+    res.json({ isMember: !!membership });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 });
 

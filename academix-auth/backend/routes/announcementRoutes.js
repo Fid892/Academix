@@ -1,5 +1,7 @@
 const router = require("express").Router();
 const Announcement = require("../models/Announcement");
+const AnnouncementLike = require("../models/AnnouncementLike");
+const AnnouncementComment = require("../models/AnnouncementComment");
 const Notification = require("../models/Notification");
 const { isAuthenticated, isAdmin, isFaculty } = require("../middleware/auth");
 const multer = require("multer");
@@ -315,5 +317,125 @@ router.patch(
     }
   }
 );
+
+/* =====================================================
+   LIKE SYSTEM (Twitter-style)
+===================================================== */
+
+router.post("/like", isAuthenticated, async (req, res) => {
+  try {
+    const { announcementId } = req.body;
+    const userId = req.user._id;
+
+    const existingLike = await AnnouncementLike.findOne({ userId, announcementId });
+    if (existingLike) {
+      return res.status(400).json({ message: "Already liked" });
+    }
+
+    const like = new AnnouncementLike({ userId, announcementId });
+    await like.save();
+
+    res.status(201).json({ message: "Like added" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+});
+
+router.delete("/like", isAuthenticated, async (req, res) => {
+  try {
+    const { announcementId } = req.body;
+    const userId = req.user._id;
+
+    await AnnouncementLike.findOneAndDelete({ userId, announcementId });
+    res.status(200).json({ message: "Like removed" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+});
+
+/* =====================================================
+   COMMENT SYSTEM (Thread-based)
+===================================================== */
+
+router.post("/comment", isAuthenticated, async (req, res) => {
+  try {
+    const { announcementId, content } = req.body;
+
+    const newComment = new AnnouncementComment({
+      announcementId,
+      userId: req.user._id,
+      userName: req.user.name,
+      role: req.user.role,
+      content
+    });
+
+    await newComment.save();
+    res.status(201).json({ message: "Comment added", comment: newComment });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+});
+
+router.get("/:id/comments", isAuthenticated, async (req, res) => {
+  try {
+    const comments = await AnnouncementComment.find({ announcementId: req.params.id })
+      .sort({ createdAt: 1 });
+    res.status(200).json(comments);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+});
+
+/* =====================================================
+   TRENDING MODULE
+===================================================== */
+
+router.get("/trending", isAuthenticated, async (req, res) => {
+  try {
+    // Basic trending: mostly relying on recent announcements and aggregating likes + comments natively.
+    // For simplicity, we fetch recent announcements (status official) and compute a score.
+    const announcements = await Announcement.find({ status: "official" })
+      .sort({ createdAt: -1 })
+      .limit(30);
+
+    const trendingData = [];
+
+    for (const ann of announcements) {
+      const likeCount = await AnnouncementLike.countDocuments({ announcementId: ann._id });
+      const commentCount = await AnnouncementComment.countDocuments({ announcementId: ann._id });
+      const viewCount = 0; // if tracking views later
+
+      // Algorithm: (Likes * 3) + (Comments * 2) + Views
+      const score = (likeCount * 3) + (commentCount * 2) + viewCount;
+
+      trendingData.push({
+        ...ann.toObject(),
+        likeCount,
+        commentCount,
+        score
+      });
+    }
+
+    // Sort by score
+    trendingData.sort((a, b) => b.score - a.score);
+
+    // Return Top 5
+    res.status(200).json(trendingData.slice(0, 5));
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+});
+
+router.get("/:id/stats", isAuthenticated, async (req, res) => {
+  try {
+    const likeCount = await AnnouncementLike.countDocuments({ announcementId: req.params.id });
+    const isLiked = await AnnouncementLike.exists({ announcementId: req.params.id, userId: req.user._id });
+    const commentCount = await AnnouncementComment.countDocuments({ announcementId: req.params.id });
+
+    res.status(200).json({ likeCount, commentCount, isLiked: !!isLiked });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+});
 
 module.exports = router;

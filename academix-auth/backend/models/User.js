@@ -40,6 +40,12 @@ const userSchema = new mongoose.Schema({
       showActivity: { type: Boolean, default: true }
     }
   },
+  joinedGroups: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "StudyGroup"
+    }
+  ],
   createdAt: {
     type: Date,
     default: Date.now

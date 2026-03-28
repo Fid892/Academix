@@ -3,6 +3,8 @@ import "./Admin.css";
 import { useNavigate } from "react-router-dom";
 import ManageGroups from "./ManageGroups";
 import ManageUsers from "./ManageUsers";
+import SocialActions from "./SocialActions";
+
 function Admin() {
 
   const navigate = useNavigate();
@@ -336,6 +338,7 @@ function Admin() {
                       style={{ width: "220px", marginTop: "16px", borderRadius: "12px", border: '1px solid var(--border-subtle)' }}
                     />
                   )}
+                  <SocialActions announcementId={a._id} link={null} />
                 </div>
             ))} 
             {officialAnnouncements.length === 0 && <div className="faculty-empty">No official notices published yet.</div>}
@@ -368,6 +371,7 @@ function Admin() {
                     style={{ width: "200px", marginTop: "10px" }}
                   />
                 )}
+                <SocialActions announcementId={a._id} link={null} />
               </div>
             ))}
           </div>

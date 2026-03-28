@@ -189,4 +189,25 @@ router.get("/timeline", isAuthenticated, async (req, res) => {
   }
 });
 
+/* =====================================================
+   GET Specific User's Joined Groups
+ ===================================================== */
+router.get("/user/:userId/groups", isAuthenticated, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Check if user exists
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Fetch groups using the joinedGroups array
+    const groups = await StudyGroup.find({ _id: { $in: user.joinedGroups } })
+      .populate("createdBy", "name department");
+
+    res.status(200).json(groups);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
 module.exports = router;

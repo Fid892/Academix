@@ -38,9 +38,14 @@ function CreateGroupModal({ isOpen, onClose, onCreated }) {
   }, [universityType, groupType]);
 
   const fetchAllDepartments = async () => {
-    const res = await fetch(`http://localhost:5000/api/departments/list`);
-    const data = await res.json();
-    setDepartments(data);
+    try {
+        const res = await fetch(`http://localhost:5000/api/departments/list`);
+        if (!res.ok) throw new Error("Failed to fetch departments");
+        const data = await res.json();
+        setDepartments(data);
+    } catch (err) {
+        console.error("Fetch departments error:", err);
+    }
   };
 
   useEffect(() => {
@@ -71,33 +76,58 @@ function CreateGroupModal({ isOpen, onClose, onCreated }) {
   }, [subject]);
 
   const fetchUniversities = async () => {
-    const res = await fetch(`http://localhost:5000/api/departments/universities?type=${groupType}`);
-    const data = await res.json();
-    setUniversities(data);
+    try {
+        const res = await fetch(`http://localhost:5000/api/departments/universities?type=${groupType}`);
+        if (!res.ok) throw new Error("Failed to fetch universities");
+        const data = await res.json();
+        setUniversities(data);
+    } catch (err) {
+        console.error("Fetch universities error:", err);
+    }
   };
 
   const fetchSchemes = async () => {
-    const res = await fetch(`http://localhost:5000/api/departments/schemes?type=${groupType}&university=${universityType}`);
-    const data = await res.json();
-    setSchemes(data);
+    try {
+        const res = await fetch(`http://localhost:5000/api/departments/schemes?type=${groupType}&university=${universityType}`);
+        if (!res.ok) throw new Error("Failed to fetch schemes");
+        const data = await res.json();
+        setSchemes(data);
+    } catch (err) {
+        console.error("Fetch schemes error:", err);
+    }
   };
 
   const fetchDepartments = async () => {
-    const res = await fetch(`http://localhost:5000/api/departments/list?type=${groupType}&university=${universityType}&scheme=${scheme}`);
-    const data = await res.json();
-    setDepartments(data);
+    try {
+        const res = await fetch(`http://localhost:5000/api/departments/list?type=${groupType}&university=${universityType}&scheme=${scheme}`);
+        if (!res.ok) throw new Error("Failed to fetch departments list");
+        const data = await res.json();
+        setDepartments(data);
+    } catch (err) {
+        console.error("Fetch departments list error:", err);
+    }
   };
 
   const fetchSemesters = async () => {
-    const res = await fetch(`http://localhost:5000/api/departments/semesters?type=${groupType}&university=${universityType}&scheme=${scheme}&department=${department}`);
-    const data = await res.json();
-    setSemesters(data);
+    try {
+        const res = await fetch(`http://localhost:5000/api/departments/semesters?type=${groupType}&university=${universityType}&scheme=${scheme}&department=${department}`);
+        if (!res.ok) throw new Error("Failed to fetch semesters");
+        const data = await res.json();
+        setSemesters(data);
+    } catch (err) {
+        console.error("Fetch semesters error:", err);
+    }
   };
 
   const fetchSubjects = async () => {
-    const res = await fetch(`http://localhost:5000/api/departments/subjects-list?type=${groupType}&university=${universityType}&scheme=${scheme}&department=${department}&semester=${semester}`);
-    const data = await res.json();
-    setSubjects(data);
+    try {
+        const res = await fetch(`http://localhost:5000/api/departments/subjects-list?type=${groupType}&university=${universityType}&scheme=${scheme}&department=${department}&semester=${semester}`);
+        if (!res.ok) throw new Error("Failed to fetch subjects");
+        const data = await res.json();
+        setSubjects(data);
+    } catch (err) {
+        console.error("Fetch subjects error:", err);
+    }
   };
 
   const checkDuplicate = async () => {

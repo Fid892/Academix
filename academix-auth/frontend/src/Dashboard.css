@@ -454,6 +454,8 @@
 .animate-card-2 { animation: cardIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: 0.3s; opacity: 0; }
 .animate-card-3 { animation: cardIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: 0.4s; opacity: 0; }
 .animate-card-4 { animation: cardIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: 0.5s; opacity: 0; }
+.animate-card-5 { animation: cardIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: 0.6s; opacity: 0; }
+.animate-card-6 { animation: cardIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: 0.7s; opacity: 0; }
 
 @keyframes cardIn {
   from { opacity: 0; transform: scale(0.9) translateY(40px); }

@@ -6,6 +6,8 @@ import StudyGroups from "./StudyGroups";
 import FacultyDashboard from "./FacultyDashboard";
 import DoubtsPage from "./DoubtsPage";
 import ProfilePage from "./profile/ProfilePage";
+import StudyPlanner from "./StudyPlanner";
+import SmartLearningHub from "./SmartLearningHub";
 import "./Login.css";
 
 function Home() {
@@ -91,6 +93,12 @@ function App() {
 
         {/* ✅ NEW Profile Page */}
         <Route path="/profile" element={<ProfilePage />} />
+
+        {/* ✅ NEW Study Planner Page */}
+        <Route path="/study-planner" element={<StudyPlanner />} />
+
+        {/* ✅ NEW Smart Learning Hub Page */}
+        <Route path="/smart-learning-hub" element={<SmartLearningHub />} />
 
       </Routes>
     </Router>

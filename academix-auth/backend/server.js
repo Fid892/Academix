@@ -64,7 +64,10 @@ app.use("/api/study-groups", require("./routes/studyGroupRoutes"));
 app.use("/api/doubts", require("./routes/doubtRoutes"));
 app.use("/api/profile", require("./routes/profileRoutes"));
 app.use("/api/notifications", require("./routes/notificationRoutes"));
-
+app.use("/api/study-planner", require("./routes/studyPlannerRoutes"));
+app.use("/api/recommendations", require("./routes/recommendationRoutes"));
+app.use("/api/favorites", require("./routes/favoriteRoutes"));
+app.use("/api/timetable", require("./routes/timetableRoutes"));
 
 /* =============================
    Start Server

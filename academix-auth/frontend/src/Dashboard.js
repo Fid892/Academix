@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import "./Dashboard.css";
 import { useNavigate } from "react-router-dom";
 import NotificationDropdown from "./NotificationDropdown";
+import AnnouncementCard from "./AnnouncementCard";
+import TrendingSection from "./TrendingSection";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -142,7 +144,21 @@ function Dashboard() {
               <h3>Student Feed</h3>
               <p>View community announcements</p>
             </div>
+
+            <div className="dashboard-card animate-card-5" onClick={() => navigate("/study-planner")}>
+               <div className="plus-icon" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>📅</div>
+              <h3>Study Planner</h3>
+              <p>AI generated personalized schedules</p>
+            </div>
+
+            <div className="dashboard-card animate-card-6" onClick={() => navigate("/smart-learning-hub")}>
+               <div className="plus-icon" style={{ background: 'linear-gradient(135deg, #ec4899, #be185d)' }}>🧠</div>
+              <h3>Smart Learning Hub</h3>
+              <p>Personalized resource recommendations</p>
+            </div>
           </div>
+
+          <TrendingSection />
 
           <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '48px' }}>
              <section>
@@ -216,35 +232,6 @@ function Dashboard() {
     </div>
   );
 }
-
-const AnnouncementCard = ({ a, showFacultyInfo }) => (
-  <div className="announcement-card">
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-       <h3 style={{ margin: 0, fontSize: '1.25rem' }}>{a.title}</h3>
-       {a.eventType && <span className="status-badge" style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}>{a.eventType}</span>}
-    </div>
-    <p style={{ margin: '0 0 20px', fontSize: '1rem' }}>{a.description}</p>
-    
-    {a.image && <img src={`http://localhost:5000/uploads/${a.image}`} alt="" style={{ width: '100%', borderRadius: '12px', marginBottom: '20px', border: '1px solid var(--border-subtle)' }} />}
-    
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-       {a.link ? <a href={a.link} target="_blank" rel="noreferrer" className="announcement-link">Explore Further</a> : <div></div>}
-       <small style={{ color: 'var(--text-dim)' }}>{new Date(a.createdAt).toLocaleDateString()}</small>
-    </div>
-
-    {showFacultyInfo && a.postedBy && (
-      <div className="faculty-info-box" style={{ background: 'rgba(59, 130, 246, 0.05)', borderColor: 'var(--accent-faculty)' }}>
-        <div style={{ width: '32px', height: '32px', background: 'var(--accent-faculty)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
-           {a.postedBy.name?.[0].toUpperCase()}
-        </div>
-        <div>
-          <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 'bold' }}>Prof. {a.postedBy.name}</p>
-          <small>{a.postedBy.department} Department</small>
-        </div>
-      </div>
-    )}
-  </div>
-);
 
 const ProfileCard = ({ user }) => {
   const navigate = useNavigate();
