@@ -3,6 +3,7 @@ import "./Admin.css";
 
 function ManageUsers() {
   const [users, setUsers] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
@@ -18,7 +19,18 @@ function ManageUsers() {
 
   useEffect(() => {
     fetchUsers();
+    fetchDepartments();
   }, []);
+
+  const fetchDepartments = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/departments/list", { credentials: "include" });
+      const data = await res.json();
+      setDepartments(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Fetch departments error:", err);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -228,12 +240,16 @@ function ManageUsers() {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginTop: '8px' }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     <label style={{ fontSize: "0.75rem", color: "var(--text-dim)", fontWeight: '700' }}>DEPT</label>
-                    <input 
-                      className="notice-input" 
-                      placeholder="CSE" 
+                    <select 
+                      className="notice-select" 
                       value={formData.department}
                       onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                    />
+                    >
+                      <option value="" disabled>Select Dept</option>
+                      {departments.map((d) => (
+                        <option key={d._id} value={d.name}>{d.name}</option>
+                      ))}
+                    </select>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     <label style={{ fontSize: "0.75rem", color: "var(--text-dim)", fontWeight: '700' }}>SEM</label>
@@ -252,12 +268,16 @@ function ManageUsers() {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginTop: '8px' }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     <label style={{ fontSize: "0.75rem", color: "var(--text-dim)", fontWeight: '700' }}>DEPT</label>
-                    <input 
-                      className="notice-input" 
-                      placeholder="IT" 
+                    <select 
+                      className="notice-select" 
                       value={formData.department}
                       onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                    />
+                    >
+                      <option value="" disabled>Select Dept</option>
+                      {departments.map((d) => (
+                        <option key={d._id} value={d.name}>{d.name}</option>
+                      ))}
+                    </select>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     <label style={{ fontSize: "0.75rem", color: "var(--text-dim)", fontWeight: '700' }}>POSITION</label>

@@ -2,8 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./FacultyDashboard.css";
 import "./Dashboard.css";
+import CreateGroupModal from "./CreateGroupModal";
 import NotificationDropdown from "./NotificationDropdown";
 import SocialActions from "./SocialActions";
+import { Megaphone, Users, HelpCircle, ClipboardList, Zap, Calendar, MapPin } from "lucide-react";
 
 function FacultyDashboard() {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ function FacultyDashboard() {
   const [myBroadcasts, setMyBroadcasts] = useState([]);
   const [allFacultyBroadcasts, setAllFacultyBroadcasts] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [showGroupModal, setShowGroupModal] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -116,25 +119,25 @@ function FacultyDashboard() {
 
           <div className="faculty-card-grid">
             <div className="faculty-card" onClick={() => setShowModal(true)}>
-              <div className="faculty-card-icon">📢</div>
+              <div className="faculty-card-icon"><Megaphone size={28} /></div>
               <h3>Broadcast</h3>
               <p>Post announcements directly to the student body</p>
             </div>
 
             <div className="faculty-card" onClick={() => navigate("/study-groups")}>
-              <div className="faculty-card-icon" style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-primary)' }}>👥</div>
+              <div className="faculty-card-icon" style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-primary)' }}><Users size={28} /></div>
               <h3>Collaborations</h3>
               <p>Manage study groups and course resources</p>
             </div>
 
             <div className="faculty-card" onClick={() => navigate("/doubts")}>
-              <div className="faculty-card-icon" style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }}>❓</div>
+              <div className="faculty-card-icon" style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }}><HelpCircle size={28} /></div>
               <h3>Q&A Hub</h3>
               <p>Review and resolve student academic doubts</p>
             </div>
 
             <div className="faculty-card" onClick={() => setView("announcements")}>
-              <div className="faculty-card-icon" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>📋</div>
+              <div className="faculty-card-icon" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}><ClipboardList size={28} /></div>
               <h3>Admin Intel</h3>
               <p>Official internal notices from administration</p>
             </div>
@@ -177,15 +180,29 @@ function FacultyDashboard() {
              </section>
              <aside>
                 <div className="announcement-card" style={{ borderStyle: 'dashed', textAlign: 'center', padding: '40px', position: 'sticky', top: '20px' }}>
-                   <div style={{ fontSize: '3rem', marginBottom: '20px' }}>⚡</div>
+                   <div style={{ marginBottom: '20px', color: 'var(--accent-faculty)' }}><Zap size={48} /></div>
                    <h3 style={{ margin: '0 0 8px' }}>Reach Students Fast</h3>
                    <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>Announcements posted here bypass approval and reach students instantly.</p>
                    <button className="primary-btn" style={{ background: 'var(--accent-faculty)', width: '100%' }} onClick={() => setShowModal(true)}>Post Announcement</button>
+                   <button className="primary-btn" style={{ background: 'var(--accent-student)', width: '100%', marginTop: '12px' }} onClick={() => setShowGroupModal(true)}>+ Create Group</button>
                 </div>
              </aside>
           </div>
         </>
       )}
+
+      {/* Group Creation Modal */}
+      <CreateGroupModal 
+        isOpen={showGroupModal} 
+        onClose={() => setShowGroupModal(false)} 
+        onCreated={(group) => {
+            if (group && group._id) {
+               navigate(`/study-groups/${group._id}`);
+            } else {
+               navigate("/study-groups");
+            }
+        }} 
+      />
 
       {view === "announcements" && (
         <>
@@ -268,13 +285,15 @@ const FacultyAnnouncementCard = ({ a, isMyPost, showAuthor }) => (
     <p style={{ color: 'var(--text-muted)', lineHeight: '1.6' }}>{a.description}</p>
     
     {(a.startDate || a.venue) && (
-      <div style={{ display: 'flex', gap: '12px', marginTop: '16px', fontSize: '0.85rem', color: 'var(--text-dim)' }}>
-        {a.startDate && <span>📅 {new Date(a.startDate).toLocaleDateString()}</span>}
-        {a.venue && <span>📍 {a.venue}</span>}
+      <div style={{ display: 'flex', gap: '12px', marginTop: '16px', fontSize: '0.85rem', color: 'var(--text-dim)', alignItems: 'center' }}>
+        {a.startDate && <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={16} /> {new Date(a.startDate).toLocaleDateString()}</span>}
+        {a.venue && <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={16} /> {a.venue}</span>}
       </div>
     )}
 
-    <SocialActions announcementId={a._id} link={a.link} />
+    {a.postedByRole !== "admin" && a.postedByRole !== "mainAdmin" && (
+      <SocialActions announcementId={a._id} link={a.link} />
+    )}
 
     <div style={{ marginTop: '20px', borderTop: '1px solid var(--border-subtle)', paddingTop: '12px', textAlign: 'right' }}>
        <small style={{ color: 'var(--text-dim)' }}>

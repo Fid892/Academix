@@ -7,55 +7,49 @@ const studyGroupSchema = new mongoose.Schema(
       required: true,
       trim: true
     },
-
     groupType: {
       type: String,
       enum: ["Study Group", "Processor Discussion Group"],
       default: "Study Group"
     },
-
-    universityType: {
-      type: String,
-      trim: true
+    departmentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Department",
+      required: true
     },
-
-    scheme: {
-      type: String,
-      trim: true
+    subjectId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Subject"
     },
-
-    subject: {
-      type: String,
-      required: true,
-      trim: true
+    subjectName: {
+      type: String
     },
-
-    department: {
-      type: String,
-      trim: true
+    subjectCode: {
+      type: String
     },
-
     semester: {
-      type: String,
-      trim: true
+      type: Number
     },
-
+    // Retained for frontend legacy support
+    department: {
+      type: String
+    },
+    subject: {
+      type: String
+    },
     description: {
       type: String,
       trim: true
     },
-
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true
     },
-
     creatorRole: {
       type: String,
       required: true
     },
-
     members: [
       {
         type: mongoose.Schema.Types.ObjectId,

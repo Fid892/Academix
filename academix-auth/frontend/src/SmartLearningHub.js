@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./SmartLearningHub.css";
 import { useNavigate } from "react-router-dom";
+import { Star, Link as LinkIcon, Play, X, Heart } from "lucide-react";
 
 function SmartLearningHub() {
   const navigate = useNavigate();
@@ -132,8 +133,8 @@ function SmartLearningHub() {
            <button className={`hub-tab ${activeTab === "discover" ? "active" : ""}`} onClick={() => setActiveTab("discover")}>
               Discover
            </button>
-           <button className={`hub-tab ${activeTab === "favorites" ? "active" : ""}`} onClick={() => setActiveTab("favorites")}>
-              ⭐ Your Favorites
+           <button className={`hub-tab ${activeTab === "favorites" ? "active" : ""}`} onClick={() => setActiveTab("favorites")} style={{ display: 'flex', alignItems: 'center' }}>
+              <Star size={18} style={{marginRight: '8px'}} /> Your Favorites
            </button>
         </div>
 
@@ -207,14 +208,14 @@ function SmartLearningHub() {
                     <div className="resource-grid">
                       {favorites.map((fav, idx) => (
                          <div key={fav._id} className="resource-card fav-card animate-fade-in-up" style={{ animationDelay: `${0.1 * idx}s`, opacity: 0, animationFillMode: 'forwards' }}>
-                            <div className="card-platform-icon" style={{ background: 'rgba(236, 72, 153, 0.2)' }}>{fav.icon || "🔗"}</div>
+                            <div className="card-platform-icon" style={{ background: 'rgba(236, 72, 153, 0.2)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{fav.icon && fav.icon !== "🔗" ? fav.icon : <LinkIcon size={24} />}</div>
                             <div className="card-content">
                                <h3>{fav.title}</h3>
                                <span className="platform-tag">{fav.platform}</span>
                             </div>
                             <div className="fav-actions">
-                               <a href={fav.link} target="_blank" rel="noopener noreferrer" className="fav-btn open-btn">▶ Open</a>
-                               <button onClick={() => removeFavorite(fav._id)} className="fav-btn remove-btn">❌ Remove</button>
+                               <a href={fav.link} target="_blank" rel="noopener noreferrer" className="fav-btn open-btn" style={{ display: 'flex', alignItems: 'center' }}><Play size={14} style={{marginRight: '4px'}} /> Open</a>
+                               <button onClick={() => removeFavorite(fav._id)} className="fav-btn remove-btn" style={{ display: 'flex', alignItems: 'center' }}><X size={14} style={{marginRight: '4px'}} /> Remove</button>
                             </div>
                          </div>
                       ))}
@@ -245,13 +246,13 @@ const RecommendationCard = ({ item, rank, delay, favorites, onToggle }) => {
 
   return (
     <div onClick={handleCardClick} className="resource-card animate-fade-in-up" style={{ animationDelay: `${0.3 + delay}s`, opacity: 0, animationFillMode: 'forwards', cursor: 'pointer' }}>
-      <div className="card-platform-icon">{item.icon || "🔗"}</div>
+      <div className="card-platform-icon" style={{ color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{item.icon && item.icon !== "🔗" ? item.icon : <LinkIcon size={24} />}</div>
       <div className="card-content">
         <h3>{item.title}</h3>
         <span className="platform-tag">{item.platform}</span>
       </div>
-      <button className={`favorite-btn ${isSaved ? "saved" : ""}`} onClick={handleFavoriteClick} title={isSaved ? "Remove from Favorites" : "Add to Favorites"}>
-         {isSaved ? "❤️" : "🤍"}
+      <button className={`favorite-btn ${isSaved ? "saved" : ""}`} onClick={handleFavoriteClick} title={isSaved ? "Remove from Favorites" : "Add to Favorites"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+         {isSaved ? <Heart size={20} fill="#ec4899" color="#ec4899" /> : <Heart size={20} color="#9ca3af" />}
       </button>
     </div>
   );

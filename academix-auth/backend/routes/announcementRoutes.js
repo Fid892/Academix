@@ -408,12 +408,14 @@ router.get("/trending", isAuthenticated, async (req, res) => {
       // Algorithm: (Likes * 3) + (Comments * 2) + Views
       const score = (likeCount * 3) + (commentCount * 2) + viewCount;
 
-      trendingData.push({
-        ...ann.toObject(),
-        likeCount,
-        commentCount,
-        score
-      });
+      if (score > 0) {
+        trendingData.push({
+          ...ann.toObject(),
+          likeCount,
+          commentCount,
+          score
+        });
+      }
     }
 
     // Sort by score

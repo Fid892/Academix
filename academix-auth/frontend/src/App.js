@@ -6,7 +6,6 @@ import StudyGroups from "./StudyGroups";
 import FacultyDashboard from "./FacultyDashboard";
 import DoubtsPage from "./DoubtsPage";
 import ProfilePage from "./profile/ProfilePage";
-import StudyPlanner from "./StudyPlanner";
 import SmartLearningHub from "./SmartLearningHub";
 import "./Login.css";
 
@@ -83,7 +82,7 @@ function App() {
         <Route path="/manage-announcements" element={<ManageAnnouncements />} />
 
         {/* ✅ NEW Study Groups Page */}
-        <Route path="/study-groups" element={<StudyGroups />} />
+        <Route path="/study-groups/:groupId?" element={<StudyGroups />} />
 
         {/* ✅ NEW Faculty Dashboard */}
         <Route path="/faculty-dashboard" element={<FacultyDashboard />} />
@@ -93,9 +92,6 @@ function App() {
 
         {/* ✅ NEW Profile Page */}
         <Route path="/profile" element={<ProfilePage />} />
-
-        {/* ✅ NEW Study Planner Page */}
-        <Route path="/study-planner" element={<StudyPlanner />} />
 
         {/* ✅ NEW Smart Learning Hub Page */}
         <Route path="/smart-learning-hub" element={<SmartLearningHub />} />

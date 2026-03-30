@@ -2,398 +2,296 @@ import React, { useState, useEffect } from "react";
 import "./Admin.css";
 
 function ManageGroups() {
-  const [structures, setStructures] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [departments, setDepartments] = useState([]);
+  const [view, setView] = useState("grid"); // 'grid' | 'detail'
+  const [selectedDepartment, setSelectedDepartment] = useState(null);
+  
+  // Modal states
+  const [showDeptModal, setShowDeptModal] = useState(false);
+  const [showSubjectModal, setShowSubjectModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Modal Form State
-  const [formData, setFormData] = useState({
-    type: "Study Group",
-    university: "KTU",
-    scheme: "",
-    department: "",
-    semester: "",
+  // Forms
+  const [deptForm, setDeptForm] = useState({ name: "" });
+  const [subjectForm, setSubjectForm] = useState({
+    departmentId: "",
+    subjectName: "",
+    subjectCode: "",
+    semester: "1"
   });
 
-  // Local subjects list in modal
-  const [subjectInput, setSubjectInput] = useState("");
-  const [tempSubjects, setTempSubjects] = useState([]);
-
-  // Inline Subject Input for Cards
-  const [inlineSubjectIds, setInlineSubjectIds] = useState({}); 
+  // Department detail state
+  const [departmentSubjects, setDepartmentSubjects] = useState([]);
 
   useEffect(() => {
-    fetchStructures();
-  }, [searchQuery]);
+    fetchDepartments();
+  }, []);
 
-  const fetchStructures = async () => {
+  const fetchDepartments = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/departments?search=${searchQuery}`, {
-        credentials: "include"
-      });
+      const res = await fetch("http://localhost:5000/api/departments/list", { credentials: "include" });
       const data = await res.json();
-      setStructures(Array.isArray(data) ? data : []);
+      setDepartments(Array.isArray(data) ? data : []);
+      if (view === "detail" && selectedDepartment) {
+        const updated = data.find(d => d._id === selectedDepartment._id);
+        if (updated) setSelectedDepartment(updated);
+      }
     } catch (err) {
       console.error("Fetch failed", err);
     }
   };
 
-  const handleOpenModal = () => {
-    setFormData({
-      type: "Study Group",
-      university: "KTU",
-      scheme: "",
-      department: "",
-      semester: "",
-    });
-    setTempSubjects([]);
-    setSubjectInput("");
-    setShowModal(true);
-  };
-
-  const addTempSubject = () => {
-    if (!subjectInput.trim()) return;
-    setTempSubjects([...tempSubjects, subjectInput.trim()]);
-    setSubjectInput("");
-  };
-
-  const removeTempSubject = (index) => {
-    setTempSubjects(tempSubjects.filter((_, i) => i !== index));
-  };
-
-  const handleSaveStructure = async () => {
-    if (!formData.department || !formData.semester) {
-      alert("Department and Semester are required");
-      return;
-    }
-
-    if (tempSubjects.length === 0) {
-      alert("Please add at least one subject to the list before saving");
-      return;
-    }
-
+  const handleAddDepartment = async () => {
+    if (!deptForm.name.trim()) return;
     setIsSaving(true);
     try {
-      const res = await fetch("http://localhost:5000/api/departments/add-study-group", {
+      const res = await fetch("http://localhost:5000/api/departments/add-department", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          ...formData,
-          subjects: tempSubjects,
-        }),
+        body: JSON.stringify({ name: deptForm.name }),
       });
-
       if (res.ok) {
-        setShowModal(false);
-        fetchStructures();
+        setShowDeptModal(false);
+        setDeptForm({ name: "" });
+        fetchDepartments();
       } else {
         const errData = await res.json();
-        alert(errData.message || "Failed to save structure. Ensure you are logged in.");
+        alert(errData.message || "Failed to add department");
       }
     } catch (err) {
-      alert("Network error. Could not connect to server.");
+      alert("Network error.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleAddInlineSubject = async (deptId) => {
-    const subject = inlineSubjectIds[deptId];
-    if (!subject || !subject.trim()) {
-      alert("Please enter a subject name first");
+  const handleAddSubject = async () => {
+    const { departmentId, subjectName, subjectCode, semester } = subjectForm;
+    if (!departmentId || !subjectName || !subjectCode || !semester) {
+      alert("All fields are required");
       return;
     }
-
+    setIsSaving(true);
     try {
       const res = await fetch("http://localhost:5000/api/departments/add-subject", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ departmentId: deptId, subject: subject.trim() }),
+        body: JSON.stringify({ departmentId, subjectName, subjectCode, semester }),
       });
-
       if (res.ok) {
-        setInlineSubjectIds({ ...inlineSubjectIds, [deptId]: "" });
-        fetchStructures();
+        setShowSubjectModal(false);
+        setSubjectForm({ departmentId: "", subjectName: "", subjectCode: "", semester: "1" });
+        if (view === "detail" && selectedDepartment?._id === departmentId) {
+          fetchDepartmentSubjects(departmentId);
+        }
       } else {
-        alert("Failed to add subject. Please try again.");
+        const errData = await res.json();
+        alert(errData.message || "Failed to add subject. It might be a duplicate.");
       }
     } catch (err) {
-      console.error("Add subject failed", err);
       alert("Network error.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handleRemoveSubject = async (deptId, subjectName) => {
-    if (!window.confirm(`Remove "${subjectName}" from this group?`)) return;
+  const openDepartmentDetail = (dept) => {
+    setSelectedDepartment(dept);
+    setView("detail");
+    fetchDepartmentSubjects(dept._id);
+  };
+
+  const fetchDepartmentSubjects = async (deptId) => {
     try {
-      const res = await fetch("http://localhost:5000/api/departments/remove-subject", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ departmentId: deptId, subjectName }),
-      });
-      if (res.ok) fetchStructures();
+      const res = await fetch(`http://localhost:5000/api/departments/${deptId}/subjects`, { credentials: "include" });
+      const data = await res.json();
+      setDepartmentSubjects(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error("Remove subject failed", err);
+      console.error(err);
     }
   };
 
-  const handleDeleteStructure = async (id) => {
-    if (!window.confirm("CRITICAL: Delete this entire academic structure and all its subject associations?")) return;
-    try {
-      const res = await fetch(`http://localhost:5000/api/departments/${id}`, { 
-        method: "DELETE",
-        credentials: "include"
-      });
-      if (res.ok) fetchStructures();
-    } catch (err) {
-      console.error("Delete failed", err);
-    }
-  };
+  // Ensure we always array 1 to 8 for Semesters
+  const semestersArray = [1, 2, 3, 4, 5, 6, 7, 8];
 
   return (
     <div className="admin-content" style={{ padding: 0 }}>
-      {/* Header with Search */}
+      {/* Header */}
       <div className="admin-header-row" style={{ alignItems: 'center' }}>
-        <h2 style={{ fontSize: "2rem", fontWeight: "800", margin: 0 }}>Study Group Management</h2>
+        {view === "grid" ? (
+          <h2 style={{ fontSize: "2rem", fontWeight: "800", margin: 0 }}>Group Management</h2>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <button className="secondary-btn" onClick={() => setView("grid")} style={{ border: 'none', padding: '8px 16px' }}>
+              ← Back
+            </button>
+            <h2 style={{ fontSize: "1.8rem", fontWeight: "800", margin: 0 }}>{selectedDepartment?.name}</h2>
+          </div>
+        )}
         
-        <div style={{ display: 'flex', gap: '16px', flex: 1, justifyContent: 'flex-end', alignItems: 'center' }}>
-          <div style={{ position: 'relative', width: '300px' }}>
-            <input 
-              type="text" 
-              className="notice-input" 
-              placeholder="Search Department..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ paddingLeft: '40px', marginBottom: 0 }}
-            />
-            <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }}>🔍</span>
-          </div>
-          <button className="primary-btn" onClick={handleOpenModal}>
-            + Add Structure
-          </button>
-        </div>
-      </div>
-
-      {/* Grid of structures */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '24px', marginTop: '32px' }}>
-        {structures.map((s) => (
-          <div key={s._id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <span className="status-badge student" style={{ fontSize: '0.7rem', marginBottom: '8px', display: 'inline-block' }}>
-                  {s.type} - {s.university || "GENERAL"}
-                </span>
-                <h3 style={{ margin: 0, fontSize: '1.25rem' }}>{s.name}</h3>
-                <p style={{ color: 'var(--text-muted)', margin: '4px 0 0', fontSize: '0.9rem' }}>
-                  Scheme: {s.scheme || "N/A"} | Semester: {s.semester || "N/A"}
-                </p>
-              </div>
-              <button 
-                onClick={() => handleDeleteStructure(s._id)}
-                style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', opacity: 0.6 }}
-                title="Delete Structure"
-              >
-                🗑️
-              </button>
-            </div>
-
-            <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '12px', padding: '16px' }}>
-              <div style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--text-dim)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Subjects ({s.subjects?.length || 0})
-              </div>
-              <div style={{ maxHeight: '200px', overflowY: 'auto', marginBottom: '12px' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-                  <tbody>
-                    {(s.subjects || []).map((sub, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                        <td style={{ padding: '8px 0', width: '30px', color: 'var(--text-muted)' }}>{idx + 1}</td>
-                        <td style={{ padding: '8px 0' }}>{typeof sub === 'string' ? sub : sub.name}</td>
-                        <td style={{ padding: '8px 0', textAlign: 'right' }}>
-                          <button 
-                            onClick={() => handleRemoveSubject(s._id, typeof sub === 'string' ? sub : sub.name)}
-                            style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: '0.75rem', cursor: 'pointer' }}
-                          >
-                            Remove
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              
-              {/* Inline Add Subject */}
-              <div style={{ display: 'flex', gap: '8px', marginTop: '16px', borderTop: '1px solid var(--border-subtle)', paddingTop: '16px' }}>
-                <input 
-                  className="notice-input" 
-                  placeholder="New subject name..." 
-                  style={{ fontSize: '0.85rem', padding: '10px 14px', marginBottom: 0, flex: 1 }}
-                  value={inlineSubjectIds[s._id] || ""}
-                  onChange={(e) => setInlineSubjectIds({ ...inlineSubjectIds, [s._id]: e.target.value })}
-                  onKeyPress={(e) => e.key === 'Enter' && handleAddInlineSubject(s._id)}
-                />
-                <button 
-                  className="primary-btn" 
-                  style={{ padding: '0 16px', fontSize: '0.8rem', height: '40px' }}
-                  onClick={() => handleAddInlineSubject(s._id)}
-                >
-                  Add
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {structures.length === 0 && (
-          <div className="faculty-empty" style={{ gridColumn: '1 / -1', border: '2px dashed var(--border-subtle)', background: 'rgba(255,255,255,0.01)', padding: '60px' }}>
-            No structures found. Create one to begin.
+        {view === "grid" && (
+          <div style={{ display: 'flex', gap: '16px', flex: 1, justifyContent: 'flex-end', alignItems: 'center' }}>
+            <button className="primary-btn" onClick={() => setShowDeptModal(true)}>
+              Add Department
+            </button>
           </div>
         )}
       </div>
 
-      {/* Main Structural Modal */}
-      {showModal && (
-        <div className="notice-modal-overlay">
-          <div className="notice-modal" style={{ maxWidth: '700px' }}>
-            <div className="notice-header">
-              <h2>Add Study Group Structure</h2>
-              <span className="close-btn" onClick={() => setShowModal(false)}>✕</span>
+      {/* Grid View */}
+      {view === "grid" && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px', marginTop: '32px' }}>
+          {departments.map((dept) => (
+            <div key={dept._id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '16px', cursor: 'pointer', transition: 'transform 0.2s' }} onClick={() => openDepartmentDetail(dept)}>
+              <div>
+                <span className="status-badge student" style={{ fontSize: '0.7rem', marginBottom: '8px', display: 'inline-block' }}>
+                  DEPARTMENT
+                </span>
+                <h3 style={{ margin: 0, fontSize: '1.25rem' }}>{dept.name}</h3>
+              </div>
+              
+              <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '12px', padding: '16px', marginTop: 'auto', textAlign: 'center' }}>
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-dim)', fontWeight: 'bold' }}>
+                  Click to View Subjects →
+                </span>
+              </div>
             </div>
+          ))}
 
-            <div className="notice-body" style={{ maxHeight: '70vh', overflowY: 'auto', paddingRight: '8px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-dim)' }}>TYPE</label>
-                  <select 
-                    className="notice-select"
-                    value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+          {departments.length === 0 && (
+            <div className="faculty-empty" style={{ gridColumn: '1 / -1', border: '2px dashed var(--border-subtle)', background: 'rgba(255,255,255,0.01)', padding: '60px' }}>
+              No departments found. Add a department to begin.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Detail View */}
+      {view === "detail" && (
+        <div style={{ marginTop: '32px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+          {semestersArray.map(sem => {
+            const subjectsForSem = departmentSubjects.filter(s => s.semester === sem);
+            return (
+              <div key={sem} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', borderBottom: '1px solid var(--border-subtle)' }}>
+                  <h3 style={{ margin: 0, color: 'var(--accent-primary)', fontSize: '1.2rem' }}>
+                    Semester {sem}
+                  </h3>
+                  <button 
+                    className="primary-btn" 
+                    style={{ background: 'var(--accent-faculty)', padding: '8px 16px', fontSize: '0.85rem' }}
+                    onClick={() => {
+                       setSubjectForm({
+                         departmentId: selectedDepartment._id,
+                         subjectName: "",
+                         subjectCode: "",
+                         semester: sem.toString()
+                       });
+                       setShowSubjectModal(true);
+                    }}
                   >
-                    <option value="Study Group">Study Group</option>
-                    <option value="Others">Others</option>
-                  </select>
+                    + Add Subject
+                  </button>
                 </div>
-
-                {formData.type === "Study Group" && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-dim)' }}>UNIVERSITY</label>
-                    <select 
-                      className="notice-select"
-                      value={formData.university}
-                      onChange={(e) => setFormData({ ...formData, university: e.target.value })}
-                    >
-                      <option value="KTU">KTU</option>
-                      <option value="Autonomous">Autonomous</option>
-                    </select>
+                
+                {subjectsForSem.length === 0 ? (
+                  <div style={{ padding: '20px', color: 'var(--text-dim)', fontStyle: 'italic', textAlign: 'center', background: 'rgba(0,0,0,0.2)', borderBottomLeftRadius: '16px', borderBottomRightRadius: '16px' }}>
+                    No subjects added for Semester {sem} yet.
                   </div>
-                )}
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '20px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-dim)' }}>SCHEME</label>
-                  <input 
-                    className="notice-input" 
-                    placeholder="e.g. 2019" 
-                    value={formData.scheme}
-                    onChange={(e) => setFormData({ ...formData, scheme: e.target.value })}
-                  />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-dim)' }}>SEMESTER</label>
-                  <input 
-                    type="number"
-                    className="notice-input" 
-                    placeholder="1 - 8" 
-                    min="1"
-                    max="8"
-                    value={formData.semester}
-                    onChange={(e) => setFormData({ ...formData, semester: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '20px' }}>
-                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-dim)' }}>DEPARTMENT NAME</label>
-                <input 
-                  className="notice-input" 
-                  placeholder="e.g. Computer Science and Engineering" 
-                  value={formData.department}
-                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                />
-              </div>
-
-              <div style={{ marginTop: '32px', borderTop: '1px solid var(--border-subtle)', paddingTop: '24px' }}>
-                <h4 style={{ margin: '0 0 16px', fontSize: '1rem' }}>Subject Management</h4>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <input 
-                    className="notice-input" 
-                    placeholder="Enter subject name..." 
-                    style={{ marginBottom: 0, flex: 1 }}
-                    value={subjectInput}
-                    onChange={(e) => setSubjectInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && addTempSubject()}
-                  />
-                  <button className="primary-btn" onClick={addTempSubject} style={{ height: '54px' }}>Add This</button>
-                </div>
-
-                <div style={{ marginTop: '20px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', padding: '4px', border: '1px solid var(--border-subtle)' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead>
-                      <tr style={{ color: 'var(--text-dim)', textAlign: 'left', fontSize: '0.8rem' }}>
-                        <th style={{ padding: '12px' }}>#</th>
-                        <th style={{ padding: '12px' }}>Subject Name</th>
-                        <th style={{ padding: '12px', textAlign: 'right' }}>Action</th>
+                      <tr style={{ color: 'var(--text-dim)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-subtle)', background: 'rgba(0,0,0,0.2)' }}>
+                        <th style={{ padding: '12px 24px', width: '60%' }}>Subject Name</th>
+                        <th style={{ padding: '12px 24px' }}>Subject Code</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {tempSubjects.map((s, idx) => (
-                        <tr key={idx} style={{ borderTop: '1px solid var(--border-subtle)' }}>
-                          <td style={{ padding: '12px', color: 'var(--text-muted)' }}>{idx + 1}</td>
-                          <td style={{ padding: '12px' }}>{s}</td>
-                          <td style={{ padding: '12px', textAlign: 'right' }}>
-                            <button 
-                              onClick={() => removeTempSubject(idx)}
-                              style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}
-                            >
-                              Remove
-                            </button>
-                          </td>
+                      {subjectsForSem.map((sub, index) => (
+                        <tr key={sub._id} style={{ borderBottom: index !== subjectsForSem.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                          <td style={{ padding: '16px 24px', fontWeight: '500' }}>{sub.subjectName}</td>
+                          <td style={{ padding: '16px 24px', color: 'var(--text-dim)' }}>{sub.subjectCode}</td>
                         </tr>
                       ))}
-                      {tempSubjects.length === 0 && (
-                        <tr>
-                          <td colSpan="3" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-dim)', fontStyle: 'italic' }}>
-                            Add subjects to see them in the list
-                          </td>
-                        </tr>
-                      )}
                     </tbody>
                   </table>
-                </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Add Department Modal */}
+      {showDeptModal && (
+        <div className="notice-modal-overlay">
+          <div className="notice-modal" style={{ maxWidth: '500px' }}>
+            <div className="notice-header">
+              <h2>Add Department</h2>
+              <span className="close-btn" onClick={() => setShowDeptModal(false)}>✕</span>
+            </div>
+            <div className="notice-body">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--text-dim)' }}>DEPARTMENT NAME</label>
+                <input 
+                  className="notice-input"
+                  placeholder="Type department name (e.g. Mechanical Engineering)"
+                  value={deptForm.name}
+                  onChange={(e) => setDeptForm({ name: e.target.value })}
+                  autoFocus
+                />
               </div>
             </div>
-
             <div className="notice-footer">
-              <button 
-                className="secondary-btn" 
-                onClick={() => setShowModal(false)}
-                disabled={isSaving}
-                style={{ border: 'none' }}
-              >
-                Discard
+              <button className="secondary-btn" onClick={() => setShowDeptModal(false)} disabled={isSaving} style={{ border: 'none' }}>Cancel</button>
+              <button className="primary-btn" onClick={handleAddDepartment} disabled={isSaving}>
+                {isSaving ? "Saving..." : "Save Department"}
               </button>
-              <button 
-                className="primary-btn" 
-                onClick={handleSaveStructure}
-                disabled={isSaving}
-                style={{ minWidth: '170px' }}
-              >
-                {isSaving ? "Saving..." : "Save Structure"}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Subject Modal */}
+      {showSubjectModal && (
+        <div className="notice-modal-overlay">
+          <div className="notice-modal" style={{ maxWidth: '600px' }}>
+            <div className="notice-header">
+              <h2>Add Subject to Semester {subjectForm.semester}</h2>
+              <span className="close-btn" onClick={() => setShowSubjectModal(false)}>✕</span>
+            </div>
+            <div className="notice-body">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--text-dim)' }}>SUBJECT NAME</label>
+                  <input 
+                    className="notice-input"
+                    placeholder="e.g. Data Structures"
+                    value={subjectForm.subjectName}
+                    onChange={(e) => setSubjectForm({ ...subjectForm, subjectName: e.target.value })}
+                    autoFocus
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--text-dim)' }}>SUBJECT CODE</label>
+                  <input 
+                    className="notice-input"
+                    placeholder="e.g. CS201"
+                    value={subjectForm.subjectCode}
+                    onChange={(e) => setSubjectForm({ ...subjectForm, subjectCode: e.target.value })}
+                  />
+                </div>
+
+              </div>
+            </div>
+            <div className="notice-footer">
+              <button className="secondary-btn" onClick={() => setShowSubjectModal(false)} disabled={isSaving} style={{ border: 'none' }}>Cancel</button>
+              <button className="primary-btn" onClick={handleAddSubject} disabled={isSaving}>
+                {isSaving ? "Saving..." : "Save Subject"}
               </button>
             </div>
           </div>

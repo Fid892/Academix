@@ -290,10 +290,86 @@
   border-color: var(--accent-student);
 }
 
+.notice-select option {
+  color: #000;
+  background-color: #fff;
+}
+
+.notice-textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
 .notice-body {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.notice-body .row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  width: 100%;
+}
+
+.notice-body .row > * {
+  flex: 1;
+}
+
+.notice-body .row > label {
+  flex: 0 0 auto;
+  color: #fff;
+  font-weight: 500;
+  margin-bottom: 0 !important;
+}
+
+.image-toggle {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin-top: 8px;
+}
+
+.image-toggle label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.image-toggle input {
+  margin-right: 12px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent-student);
+  cursor: pointer;
+}
+
+.upload-box input[type="file"] {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed var(--border-subtle);
+  border-radius: 12px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.preview-img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  margin-top: 10px;
+}
+
+.notice-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 32px;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 24px;
 }
 
 /* Manage Groups Specifics */

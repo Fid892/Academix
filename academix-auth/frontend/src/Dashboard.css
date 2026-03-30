@@ -169,6 +169,8 @@
   border: 1px solid var(--border-subtle);
   margin-bottom: 24px;
   transition: var(--transition);
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
 
 .announcement-card:hover {

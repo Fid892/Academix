@@ -76,7 +76,7 @@ router.post("/", isAuthenticated, upload.single("file"), async (req, res) => {
       });
     }
 
-    const { title, description, subject, isAnonymous } = req.body;
+    const { title, description, subject, isAnonymous, mentionedFaculty } = req.body;
 
     if (!title || !description) {
       return res.status(400).json({ message: "Title and description are required" });
@@ -89,11 +89,29 @@ router.post("/", isAuthenticated, upload.single("file"), async (req, res) => {
       postedBy: req.user._id,
       status: "open",
       isAnonymous: isAnonymous === "true" || isAnonymous === true || false,
+      mentionedFaculty: mentionedFaculty || null,
       fileUrl: req.file ? req.file.filename : null,
       fileName: req.file ? req.file.originalname : null
     });
 
     await doubt.save();
+
+    // Notify mentioned faculty
+    if (mentionedFaculty) {
+      try {
+        const newNotif = new Notification({
+          recipient: mentionedFaculty,
+          sender: req.user._id,
+          type: "doubt_reply", // Reuse or add mention type
+          title: "New Mention in Academic Doubt",
+          message: `${req.user.name} requested your expertise on: "${title.substring(0, 30)}..."`,
+          link: `/doubts/${doubt._id}`
+        });
+        await newNotif.save();
+      } catch (err) {
+        console.error("Mention notification error:", err);
+      }
+    }
 
     const populated = await Doubt.findById(doubt._id)
       .populate("postedBy", "name role department");

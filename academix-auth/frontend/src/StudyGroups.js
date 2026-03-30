@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from "react";
-import "./Dashboard.css"; // Uses the new design system
+import { useParams, useNavigate } from "react-router-dom";
+import "./Dashboard.css"; 
 import CreateGroupModal from "./CreateGroupModal";
+import { Settings, Book, Lock, MessageSquare, FileText, Award, Folder, Download, Paperclip, HelpCircle, Image as ImageIcon, Bell, Search, Trash2, X as CloseIcon, CheckCircle } from "lucide-react";
 
 function StudyGroups() {
+  const { groupId } = useParams();
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [groups, setGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
@@ -45,7 +49,13 @@ function StudyGroups() {
     try {
       const res = await fetch("http://localhost:5000/api/study-groups");
       const data = await res.json();
-      setGroups(Array.isArray(data) ? data : []);
+      const groupsFound = Array.isArray(data) ? data : [];
+      setGroups(groupsFound);
+      
+      if (groupId) {
+        const target = groupsFound.find(g => g._id === groupId);
+        if (target) setSelectedGroup(target);
+      }
     } catch { setGroups([]); }
   }
 
@@ -59,7 +69,10 @@ function StudyGroups() {
         group={selectedGroup} 
         user={user} 
         isMember={joinedGroupIds.has(selectedGroup._id)}
-        onBack={() => setSelectedGroup(null)} 
+        onBack={() => {
+          setSelectedGroup(null);
+          navigate("/study-groups");
+        }} 
       />
     );
   }
@@ -95,7 +108,10 @@ function StudyGroups() {
             key={group._id} 
             group={group} 
             isJoined={joinedGroupIds.has(group._id)}
-            onEnter={() => setSelectedGroup(group)}
+            onEnter={() => {
+              setSelectedGroup(group);
+              navigate(`/study-groups/${group._id}`);
+            }}
             onJoinSuccess={() => {
                 handleJoinSuccess(group._id);
                 showToast("Joined successfully");
@@ -151,8 +167,8 @@ function GroupCard({ group, isJoined, onEnter, onJoinSuccess }) {
   return (
     <div className="dashboard-card" style={{ minHeight: '260px', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-        <div style={{ width: '40px', height: '40px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>
-          {group.groupType === "Processor Discussion Group" ? "⚙️" : "📚"}
+        <div style={{ width: '40px', height: '40px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', color: 'var(--accent-primary)' }}>
+          {group.groupType === "Processor Discussion Group" ? <Settings size={20} /> : <Book size={20} />}
         </div>
         <div style={{ textAlign: 'right' }}>
           <span className="status-badge student" style={{ fontSize: '9px', display: 'block', marginBottom: '4px' }}>{group.subject}</span>
@@ -200,7 +216,7 @@ function GroupDiscussion({ group, user, isMember, onBack }) {
   const [faculties, setFaculties] = useState([]);
   const [selectedFaculty, setSelectedFaculty] = useState("");
   const [replyInputs, setReplyInputs] = useState({}); // { postId: "some text" }
-  const [activeTab, setActiveTab] = useState("discussions");
+  const [activeTab, setActiveTab] = useState(user?.role === "faculty" ? "notes" : "discussions");
 
   useEffect(() => { 
     fetchPosts(); 
@@ -310,7 +326,13 @@ function GroupDiscussion({ group, user, isMember, onBack }) {
   const discussions = posts.filter(p => p.type === "post");
   const studentNotes = posts.filter(p => p.type === "note" && p.noteCategory === "student");
   const facultyNotes = posts.filter(p => p.type === "note" && p.noteCategory === "faculty");
-  const doubts = posts.filter(p => p.type === "doubt");
+  const doubts = posts.filter(p => {
+    if (p.type !== "doubt") return false;
+    if (user?.role === "faculty") {
+      return p.mentionedFaculty?._id === user._id;
+    }
+    return true;
+  });
 
   if (!isMember) {
     return (
@@ -328,7 +350,7 @@ function GroupDiscussion({ group, user, isMember, onBack }) {
           height: '60vh', background: 'rgba(255,255,255,0.02)', borderRadius: '24px', 
           border: '1px dashed var(--border-subtle)', margin: '40px 0', textAlign: 'center', padding: '40px'
         }}>
-          <div style={{ fontSize: '64px', marginBottom: '24px' }}>🔒</div>
+          <div style={{ marginBottom: '24px', color: 'var(--text-dim)' }}><Lock size={64} /></div>
           <h3 style={{ fontSize: '1.5rem', marginBottom: '12px' }}>Access Restricted</h3>
           <p style={{ color: 'var(--text-dim)', maxWidth: '400px', lineHeight: '1.6' }}>
             You must join the group to view discussions, access resources, and participate in doubts.
@@ -356,11 +378,13 @@ function GroupDiscussion({ group, user, isMember, onBack }) {
       </div>
 
       <div className="section-tabs" style={{ marginBottom: '40px' }}>
-        <button className={`tab-btn ${activeTab === "discussions" ? "active" : ""}`} onClick={() => setActiveTab("discussions")}>
-          💬 Global Chat
-        </button>
-        <button className={`tab-btn ${activeTab === "notes" ? "active" : ""}`} onClick={() => setActiveTab("notes")}>
-          📄 Resources & Doubts
+        {user?.role !== "faculty" && (
+          <button className={`tab-btn ${activeTab === "discussions" ? "active" : ""}`} onClick={() => setActiveTab("discussions")} style={{ display: 'flex', alignItems: 'center' }}>
+            <MessageSquare size={16} style={{marginRight: '8px'}} /> Global Chat
+          </button>
+        )}
+        <button className={`tab-btn ${activeTab === "notes" ? "active" : ""}`} onClick={() => setActiveTab("notes")} style={{ display: 'flex', alignItems: 'center' }}>
+          <FileText size={16} style={{marginRight: '8px'}} /> Resources & Doubts
         </button>
       </div>
 
@@ -390,7 +414,7 @@ function GroupDiscussion({ group, user, isMember, onBack }) {
                         <div style={{ flex: 1 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <p style={{ margin: '0 0 4px', fontWeight: 'bold', fontSize: '1.05rem' }}>{post.postedBy?.name}</p>
-                                {isAuthor && <button onClick={() => handleDeletePost(post._id)} style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: '1.1rem', cursor: 'pointer' }}>🗑️</button>}
+                                {isAuthor && <button onClick={() => handleDeletePost(post._id)} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><Trash2 size={18} /></button>}
                             </div>
                             <p style={{ margin: '0 0 12px', color: 'var(--text-main)', lineHeight: '1.6' }}>{post.content}</p>
                             <small style={{ color: 'var(--text-dim)', fontSize: '0.75rem' }}>{new Date(post.createdAt).toLocaleString()}</small>
@@ -404,13 +428,18 @@ function GroupDiscussion({ group, user, isMember, onBack }) {
       )}
 
       {activeTab === "notes" && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '32px' }}>
-          
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: user?.role === "faculty" ? 'repeat(auto-fit, minmax(450px, 1fr))' : 'repeat(auto-fit, minmax(350px, 1fr))', 
+          gap: '32px' 
+        }}>
           {/* Column 1: Faculty Hub */}
           <div className="notes-column">
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                <div style={{ width: '32px', height: '32px', background: 'var(--accent-faculty)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>🏅</div>
-                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '800' }}>Official Resources</h3>
+              <div style={{ width: '32px', height: '32px', background: 'var(--accent-faculty)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                <Award size={16} />
+              </div>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '800' }}>Official Resources</h3>
             </div>
 
             {user?.role === "faculty" && (
@@ -418,38 +447,27 @@ function GroupDiscussion({ group, user, isMember, onBack }) {
                 <h4 style={{ margin: '0 0 16px', color: 'var(--accent-faculty)', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Faculty Publication</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div style={{ position: 'relative' }}>
-                    <input
-                        type="file"
-                        id="faculty-file"
-                        style={{ display: 'none' }}
-                        onChange={(e) => setNoteFile(e.target.files[0])}
-                    />
-                    <label htmlFor="faculty-file" style={{ display: 'block', background: '#1a1b1e', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', cursor: 'pointer', textAlign: 'center', fontSize: '0.9rem', color: noteFile ? 'var(--accent-faculty)' : 'var(--text-dim)' }}>
-                        {noteFile ? `📄 ${noteFile.name}` : "📂 Choose Course PDF/Image"}
+                    <input type="file" id="faculty-file" style={{ display: 'none' }} onChange={(e) => setNoteFile(e.target.files[0])} />
+                    <label htmlFor="faculty-file" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1b1e', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', cursor: 'pointer', textAlign: 'center', fontSize: '0.9rem', color: noteFile ? 'var(--accent-faculty)' : 'var(--text-dim)' }}>
+                      {noteFile ? <><FileText size={14} style={{ marginRight: '4px' }} /> {noteFile.name}</> : <><Folder size={16} style={{ marginRight: '8px' }} /> Choose Course PDF/Image</>}
                     </label>
                   </div>
-                  <input
-                    placeholder="Short description..."
-                    value={noteContent}
-                    onChange={(e) => setNoteContent(e.target.value)}
-                    style={{ background: '#1a1b1e', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', color: 'white' }}
-                  />
-                  <button className="primary-btn" style={{ background: 'var(--accent-faculty)', padding: '12px' }} onClick={() => handleUploadNote("faculty")}>
-                    Verify & Upload
-                  </button>
+                  <input placeholder="Short description..." value={noteContent} onChange={(e) => setNoteContent(e.target.value)} style={{ background: '#1a1b1e', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', color: 'white' }} />
+                  <button className="primary-btn" style={{ background: 'var(--accent-faculty)', padding: '12px' }} onClick={() => handleUploadNote("faculty")}>Verify & Upload</button>
                 </div>
               </div>
             )}
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {facultyNotes.map(note => (
                 <div className="announcement-card" key={note._id} style={{ borderLeft: '4px solid var(--accent-faculty)', position: 'relative', background: 'rgba(255,255,255,0.01)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <p style={{ margin: '0 0 12px', fontWeight: '600', color: '#fff' }}>{note.content || "Course Material"}</p>
-                    {user && note.postedBy?._id === user._id && <button onClick={() => handleDeletePost(note._id)} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1rem', opacity: 0.6 }}>✕</button>}
+                    {user && note.postedBy?._id === user._id && <button onClick={() => handleDeletePost(note._id)} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', opacity: 0.6 }}><CloseIcon size={16} /></button>}
                   </div>
                   {note.fileUrl && (
-                    <a href={`http://localhost:5000/uploads/${note.fileUrl}`} target="_blank" rel="noreferrer" className="announcement-link" style={{ background: 'rgba(59,130,246,0.1)', color: 'var(--accent-faculty)', display: 'block', textAlign: 'center', fontWeight: 'bold' }}>
-                      📥 Download Faculty PDF
+                    <a href={`http://localhost:5000/uploads/${note.fileUrl}`} target="_blank" rel="noreferrer" className="announcement-link" style={{ background: 'rgba(59,130,246,0.1)', color: 'var(--accent-faculty)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                      <Download size={16} style={{ marginRight: '8px' }} /> Download Faculty PDF
                     </a>
                   )}
                   <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-subtle)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -462,171 +480,142 @@ function GroupDiscussion({ group, user, isMember, onBack }) {
             </div>
           </div>
 
-          {/* Column 2: Student Ledger */}
-          <div className="notes-column">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                <div style={{ width: '32px', height: '32px', background: 'var(--accent-primary)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>📄</div>
+          {/* Column 2: Student Vault (Hidden for Faculty) */}
+          {user?.role !== "faculty" && (
+            <div className="notes-column">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                <div style={{ width: '32px', height: '32px', background: 'var(--accent-primary)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                  <FileText size={16} />
+                </div>
                 <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '800' }}>Student Vault</h3>
-            </div>
+              </div>
 
-            <div className="announcement-card" style={{ borderStyle: 'dashed', background: 'rgba(255,255,255,0.02)', marginBottom: '24px', padding: '24px' }}>
+              <div className="announcement-card" style={{ borderStyle: 'dashed', background: 'rgba(255,255,255,0.02)', marginBottom: '24px', padding: '24px' }}>
                 <h4 style={{ margin: '0 0 16px', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--accent-primary)' }}>Share Contribution</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div style={{ position: 'relative' }}>
-                        <input
-                            type="file"
-                            id="student-file"
-                            style={{ display: 'none' }}
-                            onChange={(e) => setNoteFile(e.target.files[0])}
-                        />
-                        <label htmlFor="student-file" style={{ display: 'block', background: '#1a1b1e', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', cursor: 'pointer', textAlign: 'center', fontSize: '0.9rem', color: noteFile ? 'var(--accent-primary)' : 'var(--text-dim)' }}>
-                            {noteFile ? `📄 ${noteFile.name}` : "📂 Select Material to Upload"}
-                        </label>
+                  <div style={{ position: 'relative' }}>
+                    <input type="file" id="student-file" style={{ display: 'none' }} onChange={(e) => setNoteFile(e.target.files[0])} />
+                    <label htmlFor="student-file" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1b1e', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', cursor: 'pointer', textAlign: 'center', fontSize: '0.9rem', color: noteFile ? 'var(--accent-primary)' : 'var(--text-dim)' }}>
+                      {noteFile ? <><FileText size={14} style={{ marginRight: '4px' }} /> {noteFile.name}</> : <><Folder size={16} style={{ marginRight: '8px' }} /> Select Material to Upload</>}
+                    </label>
+                  </div>
+                  <input placeholder="Group will see this description..." value={noteContent} onChange={(e) => setNoteContent(e.target.value)} style={{ background: '#1a1b1e', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', color: 'white' }} />
+                  <button className="primary-btn" style={{ padding: '12px' }} onClick={() => handleUploadNote("student")}>Add to Vault</button>
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {studentNotes.map(note => (
+                  <div className="announcement-card" key={note._id} style={{ position: 'relative', background: 'rgba(255,255,255,0.01)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <p style={{ margin: '0 0 12px', fontWeight: '500' }}>{note.content || "Study Material"}</p>
+                      {user && note.postedBy?._id === user._id && <button onClick={() => handleDeletePost(note._id)} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', opacity: 0.6 }}><CloseIcon size={16} /></button>}
                     </div>
-                    <input
-                        placeholder="Group will see this description..."
-                        value={noteContent}
-                        onChange={(e) => setNoteContent(e.target.value)}
-                        style={{ background: '#1a1b1e', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-subtle)', color: 'white' }}
-                    />
-                    <button className="primary-btn" style={{ padding: '12px' }} onClick={() => handleUploadNote("student")}>
-                        Add to Vault
-                    </button>
-                </div>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {studentNotes.map(note => (
-                <div className="announcement-card" key={note._id} style={{ position: 'relative', background: 'rgba(255,255,255,0.01)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <p style={{ margin: '0 0 12px', fontWeight: '500' }}>{note.content || "Study Material"}</p>
-                    {user && note.postedBy?._id === user._id && <button onClick={() => handleDeletePost(note._id)} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1rem', opacity: 0.6 }}>✕</button>}
+                    {note.fileUrl && (
+                      <a href={`http://localhost:5000/uploads/${note.fileUrl}`} target="_blank" rel="noreferrer" className="announcement-link" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                        <Paperclip size={16} style={{ marginRight: '8px' }} /> View Material
+                      </a>
+                    )}
+                    <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-subtle)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <small style={{ color: 'var(--text-dim)', fontSize: '0.75rem' }}>{note.postedBy?.name}</small>
+                      <small style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>{new Date(note.createdAt).toLocaleDateString()}</small>
+                    </div>
                   </div>
-                  {note.fileUrl && (
-                    <a href={`http://localhost:5000/uploads/${note.fileUrl}`} target="_blank" rel="noreferrer" className="announcement-link" style={{ display: 'block', textAlign: 'center', fontWeight: 'bold' }}>
-                      📎 View Material
-                    </a>
-                  )}
-                  <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-subtle)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <small style={{ color: 'var(--text-dim)', fontSize: '0.75rem' }}>{note.postedBy?.name}</small>
-                    <small style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>{new Date(note.createdAt).toLocaleDateString()}</small>
-                  </div>
-                </div>
-              ))}
-              {studentNotes.length === 0 && <div className="faculty-empty" style={{ padding: '40px 20px', background: 'rgba(255,255,255,0.01)', border: '1px dashed var(--border-subtle)' }}>Vault is empty.</div>}
+                ))}
+                {studentNotes.length === 0 && <div className="faculty-empty" style={{ padding: '40px 20px', background: 'rgba(255,255,255,0.01)', border: '1px dashed var(--border-subtle)' }}>Vault is empty.</div>}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Column 3: Doubts Hub */}
           <div className="notes-column">
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                <div style={{ width: '32px', height: '32px', background: 'var(--accent-student)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>❓</div>
-                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '800' }}>Doubts Hub</h3>
+              <div style={{ width: '32px', height: '32px', background: 'var(--accent-student)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                <HelpCircle size={16} />
+              </div>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '800' }}>Doubts Hub</h3>
             </div>
 
-            <div className="announcement-card" style={{ borderStyle: 'dashed', borderColor: 'var(--accent-student)', background: 'rgba(239, 68, 68, 0.03)', marginBottom: '24px', padding: '24px' }}>
+            {user?.role !== "faculty" ? (
+              <div className="announcement-card" style={{ borderStyle: 'dashed', borderColor: 'var(--accent-student)', background: 'rgba(239, 68, 68, 0.03)', marginBottom: '24px', padding: '24px' }}>
                 <h4 style={{ margin: '0 0 16px', color: 'var(--accent-student)', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Resolve an Issue</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <textarea
-                    placeholder="Describe your doubt here for classmates or faculty..."
-                    rows={3}
-                    value={doubtContent}
-                    onChange={(e) => setDoubtContent(e.target.value)}
-                    style={{ background: '#1a1b1e', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-subtle)', color: 'white', resize: 'none', fontSize: '0.95rem' }}
-                    />
-
-                    <div style={{ position: 'relative' }}>
-                        <input
-                            type="file"
-                            id="doubt-file-upload"
-                            style={{ display: 'none' }}
-                            onChange={(e) => setDoubtFile(e.target.files[0])}
-                        />
-                        <label htmlFor="doubt-file-upload" style={{ display: 'block', background: '#1a1b1e', padding: '10px', borderRadius: '10px', border: '1px solid var(--border-subtle)', cursor: 'pointer', textAlign: 'center', fontSize: '0.85rem', color: doubtFile ? 'var(--accent-student)' : 'var(--text-dim)' }}>
-                            {doubtFile ? `📎 ${doubtFile.name}` : "🖼️ Add Proof (Image/PDF)"}
-                        </label>
-                    </div>
-                    
-                    <select 
-                      value={selectedFaculty} 
-                      onChange={(e) => setSelectedFaculty(e.target.value)}
-                      style={{ background: '#1a1b1e', padding: '10px', borderRadius: '10px', border: '1px solid var(--border-subtle)', color: 'white', fontSize: '0.85rem' }}
-                    >
-                      <option value="">Mention a Faculty (Optional)</option>
-                      {Array.isArray(faculties) && faculties.map(f => (
-                        <option key={f._id} value={f._id}>Prof. {f.name} ({f.department})</option>
-                      ))}
-                    </select>
-
-                    <button className="primary-btn" style={{ background: 'var(--accent-student)', padding: '12px' }} onClick={handleAskDoubt}>
-                        Request Clarification
-                    </button>
+                  <textarea placeholder="Describe your doubt here for classmates or faculty..." rows={3} value={doubtContent} onChange={(e) => setDoubtContent(e.target.value)} style={{ background: '#1a1b1e', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-subtle)', color: 'white', resize: 'none', fontSize: '0.95rem' }} />
+                  <div style={{ position: 'relative' }}>
+                    <input type="file" id="doubt-file-upload" style={{ display: 'none' }} onChange={(e) => setDoubtFile(e.target.files[0])} />
+                    <label htmlFor="doubt-file-upload" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1b1e', padding: '10px', borderRadius: '10px', border: '1px solid var(--border-subtle)', cursor: 'pointer', textAlign: 'center', fontSize: '0.85rem', color: doubtFile ? 'var(--accent-student)' : 'var(--text-dim)' }}>
+                      {doubtFile ? <><Paperclip size={14} style={{ marginRight: '4px' }} /> {doubtFile.name}</> : <><ImageIcon size={16} style={{ marginRight: '8px' }} /> Add Proof (Image/PDF)</>}
+                    </label>
+                  </div>
+                  <select value={selectedFaculty} onChange={(e) => setSelectedFaculty(e.target.value)} style={{ background: '#1a1b1e', padding: '10px', borderRadius: '10px', border: '1px solid var(--border-subtle)', color: 'white', fontSize: '0.85rem' }}>
+                    <option value="">Mention a Faculty (Optional)</option>
+                    {Array.isArray(faculties) && faculties.map(f => (
+                      <option key={f._id} value={f._id}>Prof. {f.name} ({f.department})</option>
+                    ))}
+                  </select>
+                  <button className="primary-btn" style={{ background: 'var(--accent-student)', padding: '12px' }} onClick={handleAskDoubt}>Request Clarification</button>
                 </div>
-            </div>
+              </div>
+            ) : (
+              <div className="announcement-card" style={{ borderStyle: 'dashed', borderColor: 'var(--accent-faculty)', background: 'rgba(59, 130, 246, 0.03)', marginBottom: '24px', padding: '24px', textAlign: 'center' }}>
+                 <p style={{ color: 'var(--accent-faculty)', fontWeight: 'bold' }}>Doubts tagging you are prioritized below.</p>
+                 <small style={{ color: 'var(--text-dim)' }}>Students mention you when they need your expert help.</small>
+              </div>
+            )}
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {doubts.map(doubt => (
                 <div className="announcement-card" key={doubt._id} style={{ borderLeft: '4px solid var(--accent-student)', position: 'relative', background: 'rgba(255,255,255,0.01)', padding: '20px' }}>
-                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                     <p style={{ margin: 0, fontWeight: 'bold', fontSize: '0.95rem', color: 'var(--accent-student)' }}>Doubt by {doubt.postedBy?.name}</p>
-                     {user && doubt.postedBy?._id === user._id && <button onClick={() => handleDeletePost(doubt._id)} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1rem', opacity: 0.6 }}>✕</button>}
-                   </div>
-
-                   {doubt.mentionedFaculty && (
-                     <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '6px 12px', borderRadius: '6px', marginBottom: '12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-faculty)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                        <span>🔔 Tagged:</span>
-                        <strong>Prof. {doubt.mentionedFaculty.name}</strong>
-                     </div>
-                   )}
-
-                   <p style={{ margin: '0 0 16px', color: 'var(--text-main)', fontStyle: 'italic', lineHeight: '1.5', fontSize: '1rem' }}>"{doubt.content}"</p>
-                   
-                   {doubt.fileUrl && (
-                    <a href={`http://localhost:5000/uploads/${doubt.fileUrl}`} target="_blank" rel="noreferrer" className="announcement-link" style={{ marginBottom: '16px', display: 'block', textAlign: 'center', borderColor: 'var(--accent-student)', color: 'var(--accent-student)', background: 'rgba(239, 68, 68, 0.05)' }}>
-                      🔍 View Supporting Asset
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <p style={{ margin: 0, fontWeight: 'bold', fontSize: '0.95rem', color: 'var(--accent-student)' }}>Doubt by {doubt.postedBy?.name}</p>
+                    {user && doubt.postedBy?._id === user._id && <button onClick={() => handleDeletePost(doubt._id)} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', opacity: 0.6 }}><CloseIcon size={16} /></button>}
+                  </div>
+                  {doubt.mentionedFaculty && (
+                    <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '6px 12px', borderRadius: '6px', marginBottom: '12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-faculty)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                      <span style={{ display: 'flex', alignItems: 'center' }}><Bell size={14} style={{ marginRight: '4px' }} /> Tagged:</span>
+                      <strong>Prof. {doubt.mentionedFaculty.name}</strong>
+                    </div>
+                  )}
+                  <p style={{ margin: '0 0 16px', color: 'var(--text-main)', fontStyle: 'italic', lineHeight: '1.5', fontSize: '1rem' }}>"{doubt.content}"</p>
+                  {doubt.fileUrl && (
+                    <a href={`http://localhost:5000/uploads/${doubt.fileUrl}`} target="_blank" rel="noreferrer" className="announcement-link" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderColor: 'var(--accent-student)', color: 'var(--accent-student)', background: 'rgba(239, 68, 68, 0.05)' }}>
+                      <Search size={16} style={{ marginRight: '8px' }} /> View Supporting Asset
                     </a>
-                   )}
-
-                   {/* Replies Section */}
-                   <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '12px', padding: '12px', marginBottom: '16px' }}>
-                      <p style={{ margin: '0 0 12px', fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Discussion Thread</p>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {doubt.comments?.map(comment => (
-                          <div key={comment._id} style={{ fontSize: '0.85rem', borderLeft: '2px solid var(--border-subtle)', paddingLeft: '12px' }}>
-                            <div style={{ display: 'flex', gap: '8px', marginBottom: '4px' }}>
-                              <strong style={{ color: comment.postedBy?.role === 'faculty' ? 'var(--accent-faculty)' : 'var(--text-main)' }}>
-                                {comment.postedBy?.name}
-                              </strong>
-                              <span style={{ color: 'var(--text-dim)', fontSize: '0.75rem' }}>{new Date(comment.createdAt).toLocaleDateString()}</span>
-                            </div>
-                            <p style={{ margin: 0, color: 'var(--text-muted)' }}>{comment.text}</p>
+                  )}
+                  <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '12px', padding: '12px', marginBottom: '16px' }}>
+                    <p style={{ margin: '0 0 12px', fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Discussion Thread</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {doubt.comments?.map(comment => (
+                        <div key={comment._id} style={{ fontSize: '0.85rem', borderLeft: '2px solid var(--border-subtle)', paddingLeft: '12px' }}>
+                          <div style={{ display: 'flex', gap: '8px', marginBottom: '4px', alignItems: 'center' }}>
+                            <strong style={{ color: comment.postedBy?.role === 'faculty' ? 'var(--accent-faculty)' : 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              {comment.postedBy?.name}
+                              {comment.postedBy?.role === 'faculty' && <CheckCircle size={14} style={{ fill: 'var(--accent-faculty)', color: 'white' }} />}
+                            </strong>
+                            <span style={{ color: 'var(--text-dim)', fontSize: '0.75rem' }}>{new Date(comment.createdAt).toLocaleDateString()}</span>
                           </div>
-                        ))}
-                        {(!doubt.comments || doubt.comments.length === 0) && <p style={{ margin: 0, color: 'var(--text-dim)', fontSize: '0.8rem', fontStyle: 'italic' }}>No replies yet. Be the first to help!</p>}
-                      </div>
-                   </div>
-
-                   {/* Reply Input */}
-                   <div style={{ display: 'flex', gap: '10px' }}>
-                      <input 
-                        placeholder="Write a reply..."
-                        value={replyInputs[doubt._id] || ""}
-                        onChange={(e) => setReplyInputs({ ...replyInputs, [doubt._id]: e.target.value })}
-                        style={{ flex: 1, background: '#1a1b1e', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '8px 12px', color: 'white', fontSize: '0.85rem' }}
-                      />
-                      <button className="primary-btn" style={{ padding: '8px 16px', fontSize: '0.8rem' }} onClick={() => handleAddReply(doubt._id)}>Reply</button>
-                   </div>
-
-                   <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '12px', marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Posted {new Date(doubt.createdAt).toLocaleDateString()}</span>
-                      <span style={{ color: doubt.comments?.length > 0 ? '#10b981' : 'var(--accent-student)', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                        {doubt.comments?.length > 0 ? 'DISCUSSION ACTIVE' : 'AWAITING HELP'}
-                      </span>
-                   </div>
+                          <p style={{ margin: 0, color: 'var(--text-muted)' }}>{comment.text}</p>
+                        </div>
+                      ))}
+                      {(!doubt.comments || doubt.comments.length === 0) && <p style={{ margin: 0, color: 'var(--text-dim)', fontSize: '0.8rem', fontStyle: 'italic' }}>No replies yet. Be the first to help!</p>}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <input placeholder={user?.role === 'faculty' ? "Provide a verified solution..." : "Write a reply..."} value={replyInputs[doubt._id] || ""} onChange={(e) => setReplyInputs({ ...replyInputs, [doubt._id]: e.target.value })} style={{ flex: 1, background: '#1a1b1e', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '8px 12px', color: 'white', fontSize: '0.85rem' }} />
+                    <button className="primary-btn" style={{ padding: '8px 16px', fontSize: '0.8rem', background: user?.role === 'faculty' ? 'var(--accent-faculty)' : 'var(--accent-primary)' }} onClick={() => handleAddReply(doubt._id)}>
+                       {user?.role === 'faculty' ? "Verify & Reply" : "Reply"}
+                    </button>
+                  </div>
+                  <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '12px', marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Posted {new Date(doubt.createdAt).toLocaleDateString()}</span>
+                    <span style={{ color: doubt.comments?.length > 0 ? '#10b981' : 'var(--accent-student)', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                      {doubt.comments?.length > 0 ? 'DISCUSSION ACTIVE' : 'AWAITING HELP'}
+                    </span>
+                  </div>
                 </div>
               ))}
               {doubts.length === 0 && <div className="faculty-empty" style={{ padding: '40px 20px', background: 'rgba(255,255,255,0.01)', border: '1px dashed var(--border-subtle)' }}>All doubts cleared.</div>}
             </div>
           </div>
-
         </div>
       )}
     </div>

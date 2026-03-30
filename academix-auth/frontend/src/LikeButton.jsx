@@ -1,5 +1,6 @@
 import React from "react";
 import "./Dashboard.css";
+import { Heart } from "lucide-react";
 
 const LikeButton = ({ isLiked, likeCount, toggleLike }) => {
   return (
@@ -26,7 +27,7 @@ const LikeButton = ({ isLiked, likeCount, toggleLike }) => {
         if (!isLiked) Object.assign(e.currentTarget.style, { background: "transparent" });
       }}
     >
-      <span>{isLiked ? "❤️" : "🤍"}</span>
+      <span style={{ display: 'flex', alignItems: 'center' }}>{isLiked ? <Heart size={20} fill="#ef4444" color="#ef4444" /> : <Heart size={20} color="currentColor" />}</span>
       <span>{likeCount}</span>
     </button>
   );

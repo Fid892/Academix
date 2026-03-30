@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./Dashboard.css";
+import { Flame, Heart, MessageSquare } from "lucide-react";
 
 const TrendingSection = () => {
   const [trending, setTrending] = useState([]);
@@ -37,7 +38,7 @@ const TrendingSection = () => {
         fontSize: "1.5rem", 
         marginBottom: "24px" 
       }}>
-        🔥 Trending Now
+        <Flame size={28} color="#ef4444" /> Trending Now
       </h2>
       <div style={{ 
         display: "grid", 
@@ -57,7 +58,7 @@ const TrendingSection = () => {
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <h3 style={{ margin: "0 0 12px 0", fontSize: "1.1rem" }}>{a.title}</h3>
-              <span style={{ fontSize: "1.2rem", background: "rgba(239, 68, 68, 0.1)", padding: "4px 8px", borderRadius: "8px" }}>🔥</span>
+              <span style={{ fontSize: "1.2rem", background: "rgba(239, 68, 68, 0.1)", padding: "4px 8px", borderRadius: "8px", display: 'flex', alignItems: 'center' }}><Flame size={20} color="#ef4444" /></span>
             </div>
             
             <p style={{ fontSize: "0.9rem", color: "var(--text-dim)", margin: "0 0 16px 0", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
@@ -65,8 +66,8 @@ const TrendingSection = () => {
             </p>
             
             <div style={{ display: "flex", gap: "16px", color: "var(--text-muted)", fontSize: "0.95rem", fontWeight: "600" }}>
-              <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>❤️ {a.likeCount || 0}</span>
-              <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>💬 {a.commentCount || 0}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Heart size={16} color="#ef4444" fill="#ef4444" /> {a.likeCount || 0}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><MessageSquare size={16} /> {a.commentCount || 0}</span>
             </div>
           </div>
         ))}

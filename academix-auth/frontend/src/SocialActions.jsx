@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import LikeButton from "./LikeButton";
 import CommentSection from "./CommentSection";
+import { MessageSquare } from "lucide-react";
 
 const SocialActions = ({ announcementId, link }) => {
   const [stats, setStats] = useState({ likeCount: 0, commentCount: 0, isLiked: false });
@@ -81,7 +82,7 @@ const SocialActions = ({ announcementId, link }) => {
             onMouseEnter={(e) => Object.assign(e.currentTarget.style, { background: "rgba(255,255,255,0.05)" })}
             onMouseLeave={(e) => Object.assign(e.currentTarget.style, { background: "transparent" })}
           >
-            <span>💬</span> <span>{stats.commentCount}</span>
+            <span style={{ display: 'flex', alignItems: 'center' }}><MessageSquare size={20} /></span> <span>{stats.commentCount}</span>
           </button>
         </div>
         {link && (

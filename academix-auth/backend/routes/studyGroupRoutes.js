@@ -42,15 +42,12 @@ router.get("/", async (req, res) => {
 
 router.get("/check-duplicate", async (req, res) => {
   try {
-    const { universityType, scheme, department, semester, subject } = req.query;
+    const { departmentId, subjectId } = req.query;
     
     const existing = await StudyGroup.findOne({
       groupType: "Study Group",
-      universityType,
-      scheme,
-      department,
-      semester,
-      subject
+      departmentId,
+      subjectId
     });
 
     if (existing) {
@@ -90,47 +87,64 @@ router.post("/", isAuthenticated, async (req, res) => {
   try {
     const { 
       groupType, 
-      universityType, 
-      scheme, 
-      department, 
-      semester, 
-      subject,
+      departmentId, 
+      subjectId,
       name,
       description 
     } = req.body;
 
-    if (!groupType || !department || !name) {
+    if (!groupType || !departmentId || !name) {
       return res.status(400).json({ message: "Required fields missing" });
     }
 
-    // Duplicate check for Study Groups
-    if (groupType === "Study Group") {
-      const existing = await StudyGroup.findOne({
-        groupType,
-        universityType,
-        scheme,
-        department,
-        semester,
-        subject
-      });
+    let groupSubject = "";
+    let groupSubjectName = "";
+    let groupSubjectCode = "";
+    let groupSemester = null;
+    let groupDepartmentName = "";
 
-      if (existing) {
-        return res.status(400).json({ message: "A group for this subject already exists." });
+    const DepartmentModel = require("../models/Department");
+    const deptDoc = await DepartmentModel.findById(departmentId);
+    if(deptDoc) groupDepartmentName = deptDoc.name;
+
+    if (groupType === "Study Group" && subjectId) {
+      const SubjectModel = require("../models/Subject");
+      const subDoc = await SubjectModel.findById(subjectId);
+      if (subDoc) {
+         groupSubject = subDoc.subjectName;
+         groupSubjectName = subDoc.subjectName;
+         groupSubjectCode = subDoc.subjectCode;
+         groupSemester = subDoc.semester;
+         
+         const existing = await StudyGroup.findOne({
+            groupType,
+            departmentId,
+            subjectId
+         });
+         
+         if (existing) {
+            return res.status(400).json({ message: "A group for this subject already exists." });
+         }
       }
+    } else {
+       groupSubject = `${groupDepartmentName} Discussion`;
     }
 
     const group = new StudyGroup({
       name,
       groupType,
-      universityType,
-      scheme,
-      department,
-      semester,
-      subject,
-      description: description || `Collaborative learning space for ${subject}`,
+      departmentId,
+      subjectId,
+      subjectName: groupSubjectName,
+      subjectCode: groupSubjectCode,
+      semester: groupSemester,
+      department: groupDepartmentName,
+      subject: groupSubject,
+      description: description || `Collaborative learning space for ${groupSubject}`,
       createdBy: req.user._id,
       creatorRole: req.user.role,
-      members: [req.user._id]
+      members: [req.user._id],
+      membersCount: 1
     });
 
     await group.save();
@@ -326,6 +340,15 @@ router.post("/join", isAuthenticated, async (req, res) => {
     if (!groupId) {
       return res.status(400).json({ message: "Group ID is required" });
     }
+
+    const UserDoc = await User.findById(userId);
+    const groupDoc = await StudyGroup.findById(groupId);
+
+    if (!groupDoc) {
+      return res.status(404).json({ message: "Group not found" });
+    }
+
+
 
     // Check if membership exists
     const existing = await GroupMembership.findOne({ userId, groupId });

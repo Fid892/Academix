@@ -42,6 +42,11 @@ const doubtSchema = new mongoose.Schema(
 
     fileName: {
       type: String
+    },
+    
+    mentionedFaculty: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
     }
   },
   {

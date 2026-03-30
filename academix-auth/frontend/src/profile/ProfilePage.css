@@ -32,11 +32,13 @@
   height: 300px;
   background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
   z-index: 0;
+  pointer-events: none;
 }
 
 .profile-image-container {
   position: relative;
   flex-shrink: 0;
+  z-index: 2;
 }
 
 .profile-img-large {
@@ -69,6 +71,7 @@
   cursor: pointer;
   border: 4px solid var(--bg-card);
   transition: var(--transition);
+  z-index: 3;
 }
 
 .edit-img-badge:hover {
@@ -78,7 +81,8 @@
 
 .profile-main-info {
   flex: 1;
-  z-index: 1;
+  z-index: 2;
+  position: relative;
 }
 
 .profile-main-info h1 {
@@ -120,11 +124,15 @@
   line-height: 1.6;
   max-width: 600px;
   margin: 0;
+  position: relative;
+  z-index: 2;
 }
 
 /* Edit Button */
 .header-actions {
   align-self: flex-start;
+  position: relative;
+  z-index: 3;
 }
 
 .edit-profile-btn {

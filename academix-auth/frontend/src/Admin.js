@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import ManageGroups from "./ManageGroups";
 import ManageUsers from "./ManageUsers";
 import SocialActions from "./SocialActions";
+import { BarChart2, Megaphone, GraduationCap, Clock, Folder, Users, LogOut, Tag, MapPin, Calendar, Plus } from "lucide-react";
 
 function Admin() {
 
@@ -238,47 +239,53 @@ function Admin() {
           <li
             className={activeSection === "dashboard" ? "active" : ""}
             onClick={() => setActiveSection("dashboard")}
+            style={{ display: 'flex', alignItems: 'center' }}
           >
-            📊 Dashboard
+            <BarChart2 size={18} style={{marginRight: '8px'}} /> Dashboard
           </li>
 
           <li
             className={activeSection === "notice" ? "active" : ""}
             onClick={() => setActiveSection("notice")}
+            style={{ display: 'flex', alignItems: 'center' }}
           >
-            📢 Official Notice
+            <Megaphone size={18} style={{marginRight: '8px'}} /> Official Notice
           </li>
 
           <li
             className={activeSection === "announcements" ? "active" : ""}
             onClick={() => setActiveSection("announcements")}
+            style={{ display: 'flex', alignItems: 'center' }}
           >
-            🎓 Student Posts
+            <GraduationCap size={18} style={{marginRight: '8px'}} /> Student Posts
           </li>
 
           <li
             className={activeSection === "pending" ? "active" : ""}
             onClick={() => setActiveSection("pending")}
+            style={{ display: 'flex', alignItems: 'center' }}
           >
-            ⌛ Pending Requests
+            <Clock size={18} style={{marginRight: '8px'}} /> Pending Requests
           </li>
 
           <li
             className={activeSection === "groups" ? "active" : ""}
             onClick={() => setActiveSection("groups")}
+            style={{ display: 'flex', alignItems: 'center' }}
           >
-            📁 Manage Groups
+            <Folder size={18} style={{marginRight: '8px'}} /> Manage Groups
           </li>
           
           <li
             className={activeSection === "management" ? "active" : ""}
             onClick={() => setActiveSection("management")}
+            style={{ display: 'flex', alignItems: 'center' }}
           >
-            👥 User Management
+            <Users size={18} style={{marginRight: '8px'}} /> User Management
           </li>
 
-          <li className="logout-btn" style={{ marginTop: 'auto' }} onClick={handleLogout}>
-            🚪 Logout
+          <li className="logout-btn" style={{ marginTop: 'auto', display: 'flex', alignItems: 'center' }} onClick={handleLogout}>
+            <LogOut size={18} style={{marginRight: '8px'}} /> Logout
           </li>
         </ul>
       </div>
@@ -325,10 +332,10 @@ function Admin() {
                   </div>
                   <p style={{ margin: '12px 0' }}>{a.description}</p>
 
-                  <div style={{ display: 'flex', gap: '16px', fontSize: '0.85rem', color: 'var(--text-dim)' }}>
-                    {a.eventType && <span>🏷️ {a.eventType}</span>}
-                    {a.venue && <span>📍 {a.venue}</span>}
-                    {a.startDate && <span>📅 {new Date(a.startDate).toLocaleDateString()}</span>}
+                  <div style={{ display: 'flex', gap: '16px', fontSize: '0.85rem', color: 'var(--text-dim)', alignItems: 'center' }}>
+                    {a.eventType && <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Tag size={16} /> {a.eventType}</span>}
+                    {a.venue && <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={16} /> {a.venue}</span>}
+                    {a.startDate && <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={16} /> {new Date(a.startDate).toLocaleDateString()}</span>}
                   </div>
 
                   {a.image && (
@@ -338,7 +345,9 @@ function Admin() {
                       style={{ width: "220px", marginTop: "16px", borderRadius: "12px", border: '1px solid var(--border-subtle)' }}
                     />
                   )}
-                  <SocialActions announcementId={a._id} link={null} />
+                  {a.postedByRole !== "admin" && a.postedByRole !== "mainAdmin" && (
+                    <SocialActions announcementId={a._id} link={null} />
+                  )}
                 </div>
             ))} 
             {officialAnnouncements.length === 0 && <div className="faculty-empty">No official notices published yet.</div>}
@@ -347,7 +356,7 @@ function Admin() {
               className="floating-add-btn"
               onClick={() => setShowNoticeModal(true)}
             >
-              +
+              <Plus size={24} />
             </button>
           </div>
         )}
@@ -386,8 +395,18 @@ function Admin() {
               <div key={a._id} className="announcement">
                 <h4>{a.title}</h4>
                 <p>{a.description}</p>
+                <p><strong>Venue:</strong> {a.venue}</p>
+                <p><strong>Type:</strong> {a.eventType}</p>
 
-                <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+                {a.image && (
+                  <img
+                    src={`http://localhost:5000/uploads/${a.image}`}
+                    alt="Pending Announcement"
+                    style={{ width: "200px", marginTop: "10px", borderRadius: "8px", border: "1px solid var(--border-subtle)" }}
+                  />
+                )}
+
+                <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
                   <button onClick={() => approve(a._id)}>
                     Approve
                   </button>
@@ -401,6 +420,9 @@ function Admin() {
                 </div>
               </div>
             ))}
+            {pendingAnnouncements.length === 0 && (
+              <div className="faculty-empty">No pending requests at the moment.</div>
+            )}
           </div>
         )}
 
@@ -477,8 +499,8 @@ function Admin() {
           />
         </div>
 
-        <div className="row" style={{ marginBottom: "15px" }}>
-          <label style={{ marginRight: "10px" }}>Target Audience:</label>
+        <div className="row">
+          <label>Target Audience:</label>
           <select
             className="notice-select"
             value={noticeForm.target}

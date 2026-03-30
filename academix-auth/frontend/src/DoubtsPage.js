@@ -10,11 +10,24 @@ function DoubtsPage() {
   const [doubtFile, setDoubtFile] = useState(null);
   const [replyText, setReplyText] = useState("");
   const [replies, setReplies] = useState([]);
+  const [faculties, setFaculties] = useState([]);
+  const [selectedFaculty, setSelectedFaculty] = useState("");
 
   useEffect(() => {
     fetchUser();
     fetchDoubts();
+    fetchFaculties();
   }, []);
+
+  const fetchFaculties = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/study-groups/faculties/list", { credentials: "include" });
+      const data = await res.json();
+      setFaculties(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Faculties fetch error:", err);
+    }
+  };
 
   async function fetchUser() {
     try {
@@ -42,6 +55,7 @@ function DoubtsPage() {
     formData.append("description", newDoubt.description);
     formData.append("subject", newDoubt.subject);
     formData.append("isAnonymous", newDoubt.isAnonymous);
+    if (selectedFaculty) formData.append("mentionedFaculty", selectedFaculty);
     if (doubtFile) formData.append("file", doubtFile);
 
     const res = await fetch("http://localhost:5000/api/doubts", {
@@ -52,6 +66,7 @@ function DoubtsPage() {
     if (res.ok) {
       setShowAskModal(false);
       setNewDoubt({ title: "", description: "", subject: "", isAnonymous: false });
+      setSelectedFaculty("");
       setDoubtFile(null);
       fetchDoubts();
     } else {
@@ -183,30 +198,30 @@ function DoubtsPage() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '24px', marginTop: '48px' }}>
-        {doubts.map(doubt => (
-          <div className="announcement-card shadow-hover" key={doubt._id} onClick={() => openDoubt(doubt)} style={{ cursor: "pointer", display: 'flex', flexDirection: 'column', minHeight: '240px' }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: 'flex-start', marginBottom: '16px' }}>
-               <span className={`status-badge ${doubt.status}`} style={{ fontSize: '0.7rem', padding: '4px 10px' }}>{doubt.status.toUpperCase()}</span>
-               {doubt.isAnonymous && <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>👤 Private</span>}
-            </div>
-            
-            <h3 style={{ margin: '0 0 12px', fontSize: '1.3rem', color: '#fff', fontWeight: '800' }}>{doubt.title}</h3>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '24px', flex: 1, lineHeight: '1.6', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{doubt.description}</p>
-            
-            <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                  <div style={{ width: '28px', height: '28px', background: doubt.isAnonymous ? '#25262b' : 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>
-                    {doubt.isAnonymous ? "👤" : doubt.postedBy?.name?.[0].toUpperCase()}
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <small style={{ color: doubt.isAnonymous ? 'var(--text-dim)' : '#fff', fontWeight: '700' }}>{doubt.postedBy?.name}</small>
-                    <small style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>{doubt.subject}</small>
-                  </div>
-               </div>
-               <small style={{ color: 'var(--text-dim)', fontWeight: '600' }}>{new Date(doubt.createdAt).toLocaleDateString()}</small>
+        {user?.role === "faculty" && (
+          <div style={{ gridColumn: '1 / -1', marginBottom: '32px' }}>
+            <h2 className="faculty-section-title" style={{ borderColor: 'var(--accent-faculty)' }}>Expert Attention Required</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '24px', marginTop: '24px' }}>
+              {doubts.filter(d => d.mentionedFaculty === user._id || d.mentionedFaculty?._id === user._id).map(doubt => (
+                <DoubtCard key={doubt._id} doubt={doubt} onClick={() => openDoubt(doubt)} />
+              ))}
+              {doubts.filter(d => d.mentionedFaculty === user._id || d.mentionedFaculty?._id === user._id).length === 0 && (
+                <div className="faculty-empty" style={{ gridColumn: '1 / -1', padding: '40px', background: 'rgba(255,255,255,0.01)', border: '1px dashed var(--border-subtle)' }}>
+                  No doubts specifically tagging you right now.
+                </div>
+              )}
             </div>
           </div>
-        ))}
+        )}
+
+        <div style={{ gridColumn: '1 / -1' }}>
+          <h2 className="faculty-section-title" style={{ borderColor: 'var(--accent-primary)' }}>{user?.role === "faculty" ? "All Community Doubts" : "Recent Doubts"}</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '24px', marginTop: '24px' }}>
+            {doubts.map(doubt => (
+              <DoubtCard key={doubt._id} doubt={doubt} onClick={() => openDoubt(doubt)} />
+            ))}
+          </div>
+        </div>
       </div>
       {doubts.length === 0 && (
         <div className="faculty-empty" style={{ marginTop: '100px', fontSize: '1.2rem' }}>
@@ -264,6 +279,20 @@ function DoubtsPage() {
                 />
               </div>
 
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-dim)', fontWeight: '600' }}>MENTION FACULTY (FOR EXPERT SOLUTION)</label>
+                <select 
+                    value={selectedFaculty} 
+                    onChange={(e) => setSelectedFaculty(e.target.value)} 
+                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)', padding: '16px', borderRadius: '12px', color: '#fff' }}
+                >
+                  <option value="">Choose a Faculty member...</option>
+                  {faculties.map(f => (
+                    <option key={f._id} value={f._id}>Prof. {f.name} ({f.department})</option>
+                  ))}
+                </select>
+              </div>
+
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px', background: 'rgba(255,255,255,0.02)', padding: '16px 20px', borderRadius: '12px' }}>
                 <input 
                     type="checkbox" 
@@ -291,3 +320,28 @@ function DoubtsPage() {
 }
 
 export default DoubtsPage;
+
+const DoubtCard = ({ doubt, onClick }) => (
+  <div className="announcement-card shadow-hover" onClick={onClick} style={{ cursor: "pointer", display: 'flex', flexDirection: 'column', minHeight: '240px' }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: 'flex-start', marginBottom: '16px' }}>
+       <span className={`status-badge ${doubt.status}`} style={{ fontSize: '0.7rem', padding: '4px 10px' }}>{doubt.status.toUpperCase()}</span>
+       {doubt.isAnonymous && <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>👤 Private</span>}
+    </div>
+    
+    <h3 style={{ margin: '0 0 12px', fontSize: '1.3rem', color: '#fff', fontWeight: '800' }}>{doubt.title}</h3>
+    <p style={{ color: 'var(--text-muted)', marginBottom: '24px', flex: 1, lineHeight: '1.6', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{doubt.description}</p>
+    
+    <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+       <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <div style={{ width: '28px', height: '28px', background: doubt.isAnonymous ? '#25262b' : 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>
+            {doubt.isAnonymous ? "👤" : doubt.postedBy?.name?.[0].toUpperCase()}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <small style={{ color: doubt.isAnonymous ? 'var(--text-dim)' : '#fff', fontWeight: '700' }}>{doubt.postedBy?.name}</small>
+            <small style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>{doubt.subject}</small>
+          </div>
+       </div>
+       <small style={{ color: 'var(--text-dim)', fontWeight: '600' }}>{new Date(doubt.createdAt).toLocaleDateString()}</small>
+    </div>
+  </div>
+);

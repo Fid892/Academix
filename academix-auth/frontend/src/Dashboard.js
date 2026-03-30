@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import NotificationDropdown from "./NotificationDropdown";
 import AnnouncementCard from "./AnnouncementCard";
 import TrendingSection from "./TrendingSection";
+import { Plus, Users, Megaphone, Brain } from "lucide-react";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -128,31 +129,25 @@ function Dashboard() {
           <div className="card-grid">
             <div className="animate-card-1"><ProfileCard user={user} /></div>
             <div className="dashboard-card animate-card-2" onClick={() => setShowModal(true)}>
-              <div className="plus-icon"><span>+</span></div>
+              <div className="plus-icon"><Plus size={28} /></div>
               <h3>Create Post</h3>
               <p>Propose a new announcement for approval</p>
             </div>
 
             <div className="dashboard-card animate-card-3" onClick={() => navigate("/study-groups")}>
-               <div className="plus-icon" style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)' }}>👥</div>
+               <div className="plus-icon" style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)', color: 'white' }}><Users size={28} /></div>
               <h3>Study Groups</h3>
               <p>Discuss, share notes and collaborate</p>
             </div>
 
             <div className="dashboard-card animate-card-4" onClick={() => setView("student")}>
-              <div className="plus-icon" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>📢</div>
+              <div className="plus-icon" style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white' }}><Megaphone size={28} /></div>
               <h3>Student Feed</h3>
               <p>View community announcements</p>
             </div>
 
-            <div className="dashboard-card animate-card-5" onClick={() => navigate("/study-planner")}>
-               <div className="plus-icon" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>📅</div>
-              <h3>Study Planner</h3>
-              <p>AI generated personalized schedules</p>
-            </div>
-
-            <div className="dashboard-card animate-card-6" onClick={() => navigate("/smart-learning-hub")}>
-               <div className="plus-icon" style={{ background: 'linear-gradient(135deg, #ec4899, #be185d)' }}>🧠</div>
+            <div className="dashboard-card animate-card-5" onClick={() => navigate("/smart-learning-hub")}>
+               <div className="plus-icon" style={{ background: 'linear-gradient(135deg, #ec4899, #be185d)', color: 'white' }}><Brain size={28} /></div>
               <h3>Smart Learning Hub</h3>
               <p>Personalized resource recommendations</p>
             </div>

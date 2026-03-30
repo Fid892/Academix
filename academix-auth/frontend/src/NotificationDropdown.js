@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "./NotificationDropdown.css";
 
 function NotificationDropdown() {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -25,6 +27,21 @@ function NotificationDropdown() {
     }
   };
 
+  const markAsRead = async (id) => {
+    try {
+      await fetch("http://localhost:5000/api/notifications/mark-as-read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ notificationId: id })
+      });
+      setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error("Mark as read error:", err);
+    }
+  };
+
   const markAllAsRead = async () => {
     try {
       await fetch("http://localhost:5000/api/notifications/mark-as-read", {
@@ -34,15 +51,18 @@ function NotificationDropdown() {
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch (err) {
-      console.error("Mark as read error:", err);
+      console.error("Mark all as read error:", err);
     }
+  };
+
+  const handleNotificationClick = (n) => {
+    if (!n.isRead) markAsRead(n._id);
+    if (n.link) navigate(n.link);
+    setIsOpen(false);
   };
 
   const handleToggle = () => {
     setIsOpen(!isOpen);
-    if (!isOpen && unreadCount > 0) {
-      markAllAsRead();
-    }
   };
 
   return (
@@ -56,14 +76,19 @@ function NotificationDropdown() {
         <div className="notif-dropdown">
           <div className="notif-header">
             <h3>Notifications</h3>
-            {unreadCount > 0 && <button onClick={markAllAsRead}>Mark all read</button>}
+            {unreadCount > 0 && <button onClick={markAllAsRead} className="mark-all-btn">Clear All</button>}
           </div>
           <div className="notif-list">
             {notifications.length === 0 ? (
               <div className="notif-empty">No notifications yet</div>
             ) : (
               notifications.map(n => (
-                <div key={n._id} className={`notif-item ${n.isRead ? 'read' : 'unread'}`}>
+                <div 
+                  key={n._id} 
+                  className={`notif-item ${n.isRead ? 'read' : 'unread'}`}
+                  onClick={() => handleNotificationClick(n)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <div className="notif-content">
                     <p className="notif-title">{n.title}</p>
                     <p className="notif-msg">{n.message}</p>
