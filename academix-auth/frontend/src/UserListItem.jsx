@@ -36,7 +36,7 @@ const UserListItem = ({ targetUser, currentUser, hasChatted, onSend }) => {
     <div className="user-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
         <img 
-          src={targetUser.profileImage ? `http://localhost:5000/uploads/${targetUser.profileImage}` : `https://ui-avatars.com/api/?name=${targetUser.name}&background=random`} 
+          src={targetUser.profileImage ? (targetUser.profileImage.startsWith('http') ? targetUser.profileImage : `http://localhost:5000/uploads/${targetUser.profileImage}`) : `https://ui-avatars.com/api/?name=${targetUser.name}&background=random`} 
           alt="avatar" 
           style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover" }} 
         />

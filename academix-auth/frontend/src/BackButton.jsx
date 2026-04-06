@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
-const BackButton = ({ role }) => {
+const BackButton = ({ role, isAbsolute = true }) => {
   const navigate = useNavigate();
 
   const handleBack = () => {
@@ -37,9 +37,9 @@ const BackButton = ({ role }) => {
         fontWeight: "600",
         cursor: "pointer",
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        position: "absolute",
-        top: "30px",
-        left: "30px",
+        position: isAbsolute ? "absolute" : "relative",
+        top: isAbsolute ? "30px" : "auto",
+        left: isAbsolute ? "30px" : "auto",
         zIndex: 100,
         boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)"
       }}

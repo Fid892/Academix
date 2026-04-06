@@ -6,7 +6,8 @@ import AnnouncementCard from "./AnnouncementCard";
 import TrendingSection from "./TrendingSection";
 import FeedCardNavigation from "./FeedCardNavigation";
 import AnnouncementModal from "./AnnouncementModal";
-import { Plus, Users, Megaphone, Brain, X, ClipboardList, MessageCircle } from "lucide-react";
+import { Plus, Users, Megaphone, Brain, X, ClipboardList, MessageCircle, Globe } from "lucide-react";
+import CreatePageModal from "./CreatePageModal";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -31,6 +32,7 @@ function Dashboard() {
     coverImage: null,
     targetBadge: ""
   });
+  const [showPageModal, setShowPageModal] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -188,17 +190,31 @@ function Dashboard() {
               <p>Discuss, share notes and collaborate</p>
             </div>
 
-            <div className="dashboard-card animate-card-4" onClick={() => navigate("/doubts")}>
-               <div className="plus-icon" style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white' }}><Megaphone size={28} /></div>
-              <h3>Doubt System</h3>
-              <p>Resolve your academic questions</p>
-            </div>
+             <div className="dashboard-card animate-card-4" onClick={() => navigate("/doubts")}>
+                <div className="plus-icon" style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white' }}><Megaphone size={28} /></div>
+               <h3>Doubt System</h3>
+               <p>Resolve your academic questions</p>
+             </div>
 
-            <div className="dashboard-card animate-card-5" onClick={() => navigate("/smart-learning-hub")}>
-               <div className="plus-icon" style={{ background: 'linear-gradient(135deg, #ec4899, #be185d)', color: 'white' }}><Brain size={28} /></div>
-              <h3>Smart Learning Hub</h3>
-              <p>Personalized resource recommendations</p>
-            </div>
+             <div className="dashboard-card animate-card-5" onClick={() => navigate("/smart-learning-hub")}>
+                <div className="plus-icon" style={{ background: 'linear-gradient(135deg, #ec4899, #be185d)', color: 'white' }}><Brain size={28} /></div>
+               <h3>Smart Learning Hub</h3>
+               <p>Personalized resource recommendations</p>
+             </div>
+
+             <div className="dashboard-card animate-card-6" onClick={() => navigate("/pages/search")}>
+                <div className="plus-icon" style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', color: 'white' }}><Globe size={28} /></div>
+               <h3>Academic Pages 🌐</h3>
+               <p>Discover clubs, societies, and departments</p>
+             </div>
+
+             {(user?.role === "admin" || user?.role === "mainAdmin") && (
+               <div className="dashboard-card animate-card-7" onClick={() => setShowPageModal(true)}>
+                 <div className="plus-icon" style={{ background: 'linear-gradient(135deg, #3b82f6, #2dd4bf)', color: 'white' }}><Plus size={28} /></div>
+                 <h3>Create Page</h3>
+                 <p>Establish a new official page for a club or event</p>
+               </div>
+             )}
 
             {user?.isBadgeAdmin && (
               <div className="dashboard-card animate-card-6" onClick={() => navigate("/manage-announcements")}>
@@ -294,6 +310,12 @@ function Dashboard() {
         setFormData={setFormData} 
         handleChange={handleChange} 
         handleSubmit={handleSubmit} 
+      />
+
+      <CreatePageModal 
+        isOpen={showPageModal} 
+        onClose={() => setShowPageModal(false)}
+        onCreated={(newPage) => navigate(`/pages/${newPage.username}`)}
       />
     </div>
   );

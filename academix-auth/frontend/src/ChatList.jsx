@@ -17,7 +17,7 @@ const ChatList = ({ conversations, user, onSelect, conversationId }) => {
             onClick={() => onSelect(c._id)}
           >
             <img
-              src={friend.profileImage ? `http://localhost:5000/uploads/${friend.profileImage}` : `https://ui-avatars.com/api/?name=${friend.name}&background=random`}
+              src={friend.profileImage ? (friend.profileImage.startsWith('http') ? friend.profileImage : `http://localhost:5000/uploads/${friend.profileImage}`) : `https://ui-avatars.com/api/?name=${friend.name}&background=random`}
               alt="avatar"
               className="chat-avatar"
             />

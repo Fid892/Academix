@@ -75,6 +75,7 @@ app.use("/api/announcement-requests", require("./routes/announcementRequestRoute
 app.use("/api/conversations", require("./routes/conversationRoutes"));
 app.use("/api/messages", require("./routes/dmMessageRoutes"));
 app.use("/api/chat", require("./routes/chatRoutes"));
+app.use("/api/pages", require("./routes/pageRoutes"));
 
 /* =============================
    Socket.IO Connection

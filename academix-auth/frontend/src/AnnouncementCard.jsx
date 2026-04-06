@@ -46,7 +46,7 @@ const AnnouncementCard = ({ a, currentUser }) => {
             <div onClick={navigateToProfile} style={{ display: "flex", alignItems: "center", gap: "12px", cursor: "pointer" }}>
               {poster.profileImage ? (
                 <img 
-                  src={`http://localhost:5000/uploads/${poster.profileImage}`} 
+                  src={poster.profileImage.startsWith('http') ? poster.profileImage : `http://localhost:5000/uploads/${poster.profileImage}`} 
                   alt={poster.name} 
                   style={{ width: "44px", height: "44px", borderRadius: "50%", objectFit: "cover", border: isFacultyPost ? "2px solid var(--accent-student)" : "2px solid rgba(255,255,255,0.1)" }}
                 />

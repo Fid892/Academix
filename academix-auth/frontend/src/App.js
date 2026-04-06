@@ -12,6 +12,8 @@ import FacultyFeedPage from "./FacultyFeedPage";
 import EditProfile from "./EditProfile";
 import AnnouncementDetail from "./AnnouncementDetail";
 import ChatPage from "./ChatPage";
+import PageSearch from "./PageSearch";
+import PageProfile from "./PageProfile";
 import "./Login.css";
 
 import SplitLoginPage from "./SplitLoginPage";
@@ -63,6 +65,10 @@ function App() {
         {/* ✅ Chat Routes */}
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/chat/:conversationId" element={<ChatPage />} />
+
+        {/* ✅ Academic Pages Routes */}
+        <Route path="/pages/search" element={<PageSearch />} />
+        <Route path="/pages/:username" element={<PageProfile />} />
       </Routes>
     </Router>
   );

@@ -6,7 +6,8 @@ import CreateGroupModal from "./CreateGroupModal";
 import BroadcastModal from "./BroadcastModal";
 import NotificationDropdown from "./NotificationDropdown";
 import SocialActions from "./SocialActions";
-import { Megaphone, Users, HelpCircle, ClipboardList, Zap, Calendar, MapPin, X, MessageCircle } from "lucide-react";
+import { Megaphone, Users, HelpCircle, ClipboardList, Zap, Calendar, MapPin, X, MessageCircle, Globe, Plus } from "lucide-react";
+import CreatePageModal from "./CreatePageModal";
 
 function FacultyDashboard() {
   const navigate = useNavigate();
@@ -30,6 +31,7 @@ function FacultyDashboard() {
     coverImage: null,
     pdfFile: null
   });
+  const [showPageModal, setShowPageModal] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredOfficial, setFilteredOfficial] = useState([]);
@@ -222,6 +224,18 @@ function FacultyDashboard() {
               <p>Review and resolve student academic doubts</p>
             </div>
 
+            <div className="faculty-card" onClick={() => navigate("/pages/search")}>
+              <div className="faculty-card-icon" style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-primary)' }}><Globe size={28} /></div>
+              <h3>Academic Pages 🌐</h3>
+              <p>Explore societies, clubs and campus departments</p>
+            </div>
+
+            <div className="faculty-card" onClick={() => setShowPageModal(true)}>
+              <div className="faculty-card-icon" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}><Plus size={28} /></div>
+              <h3>Create Page</h3>
+              <p>Launch an official page for your department or club</p>
+            </div>
+
             <div className="faculty-card" onClick={() => setView("announcements")}>
               <div className="faculty-card-icon" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}><ClipboardList size={28} /></div>
               <h3>Admin Intel</h3>
@@ -325,6 +339,12 @@ function FacultyDashboard() {
           </div>
         </>
       )}
+
+      <CreatePageModal 
+        isOpen={showPageModal} 
+        onClose={() => setShowPageModal(false)}
+        onCreated={(newPage) => navigate(`/pages/${newPage.username}`)}
+      />
     </div>
   );
 }

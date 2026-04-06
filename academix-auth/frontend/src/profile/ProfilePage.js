@@ -171,7 +171,7 @@ function ProfilePage() {
 
 const ProfileHeader = ({ user, openEdit }) => {
   const initials = user?.name?.split(" ").map(n => n[0]).join("").toUpperCase();
-  const profileImgUrl = user?.profileImage ? `http://localhost:5000/uploads/${user.profileImage}` : null;
+  const profileImgUrl = user?.profileImage ? (user.profileImage.startsWith('http') ? user.profileImage : `http://localhost:5000/uploads/${user.profileImage}`) : null;
 
   return (
     <div className="profile-header-section">

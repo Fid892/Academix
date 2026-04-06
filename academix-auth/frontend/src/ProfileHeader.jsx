@@ -57,7 +57,7 @@ const ProfileHeader = ({ profileUser, currentUser, onEditClick }) => {
           <div className="profile-img-wrapper" style={{ position: "relative", padding: "10px", borderRadius: "50%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
             {profileUser.profileImage ? (
               <img 
-                src={`http://localhost:5000/uploads/${profileUser.profileImage}`} 
+                src={profileUser.profileImage.startsWith('http') ? profileUser.profileImage : `http://localhost:5000/uploads/${profileUser.profileImage}`} 
                 alt={userName} 
                 style={{ width: "170px", height: "170px", borderRadius: "50%", objectFit: "cover", border: "5px solid #1a1a1e", position: "relative", zIndex: 2 }}
               />

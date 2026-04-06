@@ -76,7 +76,7 @@ const SearchBar = ({ currentUser }) => {
           {results.map((r) => (
             <div key={r._id} className="chat-search-result-item" onClick={() => handleResultClick(r._id)}>
               <img 
-                src={r.profileImage ? `http://localhost:5000/uploads/${r.profileImage}` : `https://ui-avatars.com/api/?name=${r.name}&background=random`} 
+                src={r.profileImage ? (r.profileImage.startsWith('http') ? r.profileImage : `http://localhost:5000/uploads/${r.profileImage}`) : `https://ui-avatars.com/api/?name=${r.name}&background=random`} 
                 alt="profile" 
                 className="chat-search-result-pic" 
               />
