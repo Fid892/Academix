@@ -41,9 +41,11 @@ const UserListItem = ({ targetUser, currentUser, hasChatted, onSend }) => {
           style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover" }} 
         />
         <div>
-          <div style={{ fontWeight: "600", fontSize: "0.95rem", color: "#fff" }}>{targetUser.name}</div>
+          <div style={{ fontWeight: "600", fontSize: "0.95rem", color: "#fff" }}>
+            {typeof targetUser.name === 'object' ? targetUser.name?.name : targetUser.name}
+          </div>
           <div style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>
-             {targetUser.department || targetUser.role}
+             {typeof targetUser.department === 'object' ? targetUser.department?.name : (targetUser.department || targetUser.role)}
           </div>
         </div>
       </div>

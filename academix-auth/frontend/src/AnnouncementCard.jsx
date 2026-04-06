@@ -57,10 +57,12 @@ const AnnouncementCard = ({ a, currentUser }) => {
               )}
               <div>
                 <p style={{ margin: 0, fontSize: "1rem", fontWeight: "bold", color: "#fff" }}>
-                  {poster.role === "faculty" ? `Prof. ${poster.name}` : (isFacultyPost ? `${poster.name} (Admin)` : poster.name)}
+                  {poster.role === "faculty" ? `Prof. ${typeof poster.name === 'object' ? poster.name.name : poster.name}` : (isFacultyPost ? `${typeof poster.name === 'object' ? poster.name.name : poster.name} (Admin)` : (typeof poster.name === 'object' ? poster.name.name : poster.name))}
                 </p>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                   <small style={{ color: "var(--text-dim)", fontSize: "0.8rem" }}>{poster.department}</small>
+                   <small style={{ color: "var(--text-dim)", fontSize: "0.8rem" }}>
+                     {typeof poster.department === 'object' ? poster.department.name : poster.department}
+                   </small>
                    {isFacultyPost && <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: "var(--accent-student)" }}></span>}
                    {isFacultyPost && <small style={{ color: "var(--accent-student)", fontSize: "0.75rem", fontWeight: "bold" }}>Faculty</small>}
                 </div>
@@ -183,10 +185,10 @@ const AnnouncementCard = ({ a, currentUser }) => {
         {a.isForwarded && a.forwardedBy && (
            <div className="faculty-info-box" onClick={(e) => { e.stopPropagation(); navigate(`/profile/${a.forwardedBy?._id}`); }} style={{ background: "rgba(59, 130, 246, 0.05)", borderColor: "var(--accent-faculty)", padding: "12px", borderRadius: "12px", display: "flex", gap: "12px", alignItems: "center", marginTop: "8px", border: "1px solid", cursor: 'pointer' }}>
               <div style={{ width: "24px", height: "24px", background: "var(--accent-faculty)", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "0.7rem", fontWeight: "bold" }}>
-               {a.forwardedBy.name?.[0]?.toUpperCase()}
+               { (typeof a.forwardedBy.name === 'string' ? a.forwardedBy.name : (a.forwardedBy.name?.name || "A"))[0]?.toUpperCase() }
               </div>
               <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--text-muted)" }}>
-                Shared by <span style={{ color: "#fff", fontWeight: "bold" }}>Prof. {a.forwardedBy.name}</span>
+                Shared by <span style={{ color: "#fff", fontWeight: "bold" }}>Prof. {typeof a.forwardedBy.name === 'object' ? a.forwardedBy.name?.name : a.forwardedBy.name}</span>
               </p>
            </div>
         )}

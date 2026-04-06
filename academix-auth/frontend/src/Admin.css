@@ -82,7 +82,6 @@
 .main {
   flex: 1;
   padding: 48px 64px;
-  overflow-y: auto;
 }
 
 .topbar {

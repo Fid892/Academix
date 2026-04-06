@@ -27,16 +27,18 @@ const EditProfile = () => {
         navigate("/login");
         return;
       }
-      setUser(userData);
-      setFormData({
-        department: userData.department || "",
-        bio: userData.bio || ""
-      });
-
-      // Fetch Departments
       const deptRes = await fetch("http://localhost:5000/api/departments", { credentials: "include" });
       const deptData = await deptRes.json();
-      setDepartments(Array.isArray(deptData) ? deptData : []);
+      const finalDepts = Array.isArray(deptData) ? deptData.map(d => typeof d === 'object' ? d.name : d) : [];
+      setDepartments(finalDepts);
+
+      setUser(userData);
+      
+      const userDept = typeof userData.department === 'object' ? userData.department.name : (userData.department || "");
+      setFormData({
+        department: userDept,
+        bio: userData.bio || ""
+      });
       
     } catch (err) {
       console.error("Error fetching data:", err);
@@ -128,9 +130,9 @@ const EditProfile = () => {
               required
             >
               <option value="" disabled>Select your department</option>
-              {departments.map((dept) => (
-                <option key={dept} value={dept} style={{ background: "#1a1a1a" }}>
-                  {dept}
+              {departments.map((deptName) => (
+                <option key={deptName} value={deptName} style={{ background: "#1a1a1a" }}>
+                  {deptName}
                 </option>
               ))}
             </select>

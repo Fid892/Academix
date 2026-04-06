@@ -105,6 +105,7 @@
   cursor: pointer;
   transition: var(--transition);
   position: relative;
+  overflow: visible;
 }
 
 .faculty-card:hover {

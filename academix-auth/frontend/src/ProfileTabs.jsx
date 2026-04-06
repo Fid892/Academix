@@ -1,4 +1,5 @@
 import React from "react";
+import { motion } from "framer-motion";
 import { Megaphone, MessageSquare, Users } from "lucide-react";
 
 const ProfileTabs = ({ activeTab, setActiveTab, isOwnProfile }) => {
@@ -9,8 +10,8 @@ const ProfileTabs = ({ activeTab, setActiveTab, isOwnProfile }) => {
   ];
 
   return (
-    <div className="profile-tabs-wrapper" style={{ marginTop: "32px", borderBottom: "1px solid var(--border-subtle)", position: "sticky", top: 0, background: "rgba(10, 10, 10, 0.8)", backdropFilter: "blur(10px)", zIndex: 10 }}>
-      <div style={{ display: "flex", justifyContent: "center", gap: "40px" }}>
+    <div className="profile-tabs-wrapper" style={{ marginTop: "48px", borderBottom: "1px solid var(--border-subtle)", position: "sticky", top: 0, background: "rgba(10, 10, 10, 0.8)", backdropFilter: "blur(20px)", zIndex: 100 }}>
+      <div style={{ display: "flex", justifyContent: "center", gap: "60px" }}>
         {tabs.map((tab) => {
           if (tab.private && !isOwnProfile) return null;
 
@@ -22,21 +23,37 @@ const ProfileTabs = ({ activeTab, setActiveTab, isOwnProfile }) => {
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "8px",
-                padding: "16px 8px",
+                gap: "10px",
+                padding: "20px 0",
                 background: "none",
                 border: "none",
-                borderBottom: isActive ? "2px solid var(--accent-student)" : "2px solid transparent",
                 color: isActive ? "white" : "var(--text-dim)",
-                fontSize: "0.9rem",
-                fontWeight: isActive ? "bold" : "normal",
+                fontSize: "1rem",
+                fontWeight: "700",
                 cursor: "pointer",
-                transition: "all 0.3s ease",
-                opacity: isActive ? 1 : 0.6
+                transition: "color 0.3s ease",
+                position: "relative"
               }}
             >
-              {tab.icon}
+              <span style={{ color: isActive ? "var(--accent-student)" : "inherit" }}>{tab.icon}</span>
               {tab.label}
+              
+              {isActive && (
+                <motion.div
+                  layoutId="activeTab"
+                  style={{
+                    position: "absolute",
+                    bottom: "-1px",
+                    left: 0,
+                    right: 0,
+                    height: "3px",
+                    background: "var(--accent-student)",
+                    boxShadow: "0 0 15px var(--accent-student)",
+                    borderRadius: "2px"
+                  }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                />
+              )}
             </button>
           );
         })}

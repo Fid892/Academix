@@ -14,13 +14,15 @@ body {
   font-family: 'Outfit', sans-serif;
   background-color: var(--bg-dark);
   color: white;
-  overflow: hidden;
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .split-page-wrapper {
   display: flex;
   width: 100vw;
-  height: 100vh;
+  min-height: 100vh;
 }
 
 /* LEFT SECTION */
