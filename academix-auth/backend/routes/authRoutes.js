@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const passport = require("passport");
 const AllowedUser = require("../models/AllowedUser");
+const AdminBadge = require("../models/AdminBadge");
 
 // ============================
 // Check if email is allowed
@@ -72,21 +73,29 @@ router.get(
 // ============================
 // Get Current Logged In User
 // ============================
-router.get("/current-user", (req, res) => {
+router.get("/current-user", async (req, res) => {
 
   if (!req.user) {
     return res.status(401).json({ message: "Not logged in" });
   }
 
-  return res.status(200).json({
-    _id: req.user._id,
-    name: req.user.name,
-    email: req.user.email,
-    role: req.user.role,
-    department: req.user.department || "",
-    semester: req.user.semester || "",
-    designation: req.user.designation || ""
-  });
+  try {
+    const badge = await AdminBadge.findOne({ email: req.user.email });
+
+    return res.status(200).json({
+      _id: req.user._id,
+      name: req.user.name,
+      email: req.user.email,
+      role: req.user.role,
+      department: req.user.department || "",
+      semester: req.user.semester || "",
+      designation: req.user.designation || "",
+      isBadgeAdmin: !!badge,
+      badgeName: badge ? badge.badgeName : null
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
 });
 
 // ============================

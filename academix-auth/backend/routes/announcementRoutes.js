@@ -17,6 +17,10 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
+const announcementUpload = upload.fields([
+  { name: "image", maxCount: 1 },
+  { name: "pdf", maxCount: 1 }
+]);
 
 /* =====================================================
    STUDENT → Send Announcement Request (Pending)
@@ -35,8 +39,20 @@ router.post(
         eventType,
         startDate,
         endDate,
+        expiryDate,
         registrationRequired
       } = req.body;
+
+      // Smart Expiry Logic
+      let finalExpiryDate = expiryDate;
+      if (!finalExpiryDate) {
+        if (endDate) {
+          finalExpiryDate = new Date(endDate);
+        } else {
+          finalExpiryDate = new Date();
+          finalExpiryDate.setDate(finalExpiryDate.getDate() + 7);
+        }
+      }
 
       const newAnnouncement = new Announcement({
         title,
@@ -45,6 +61,7 @@ router.post(
         eventType,
         startDate,
         endDate,
+        expiryDate: finalExpiryDate,
         registrationRequired,
         image: req.file ? req.file.filename : null,
         status: "pending",
@@ -73,7 +90,7 @@ router.post(
   "/faculty-post",
   isAuthenticated,
   isFaculty,
-  upload.single("image"),
+  announcementUpload,
   async (req, res) => {
     try {
       const {
@@ -83,8 +100,24 @@ router.post(
         eventType,
         startDate,
         endDate,
+        expiryDate,
         registrationRequired
       } = req.body;
+
+      // Smart Expiry Logic
+      let finalExpiryDate = expiryDate;
+      if (!finalExpiryDate) {
+        if (endDate) {
+          finalExpiryDate = new Date(endDate);
+        } else {
+          finalExpiryDate = new Date();
+          finalExpiryDate.setDate(finalExpiryDate.getDate() + 7);
+        }
+      }
+
+      // Extract file paths from req.files
+      const imagePath = req.files && req.files.image ? req.files.image[0].filename : null;
+      const pdfPath = req.files && req.files.pdf ? req.files.pdf[0].filename : null;
 
       const newAnnouncement = new Announcement({
         title,
@@ -93,12 +126,15 @@ router.post(
         eventType,
         startDate,
         endDate,
+        expiryDate: finalExpiryDate,
         registrationRequired,
-        image: req.file ? req.file.filename : null,
+        image: imagePath,
+        pdf: pdfPath,
         status: "official",
         target: "student",
         postedByRole: "faculty",
-        postedBy: req.user._id
+        postedBy: req.user._id,
+        targetDepartment: req.user.department
       });
 
       await newAnnouncement.save();
@@ -131,9 +167,21 @@ router.post(
         eventType,
         startDate,
         endDate,
+        expiryDate,
         registrationRequired,
         target
       } = req.body;
+
+      // Smart Expiry Logic
+      let finalExpiryDate = expiryDate;
+      if (!finalExpiryDate) {
+        if (endDate) {
+          finalExpiryDate = new Date(endDate);
+        } else {
+          finalExpiryDate = new Date();
+          finalExpiryDate.setDate(finalExpiryDate.getDate() + 7);
+        }
+      }
 
       const newAnnouncement = new Announcement({
         title,
@@ -142,6 +190,7 @@ router.post(
         eventType,
         startDate,
         endDate,
+        expiryDate: finalExpiryDate,
         registrationRequired,
         image: req.file ? req.file.filename : null,
         status: "official",
@@ -163,18 +212,86 @@ router.post(
 );
 
 /* =====================================================
+   GET Admin Announcements (For Dashboard)
+   Logic: postedByRole === "admin" || "mainAdmin"
+===================================================== */
+router.get("/admin", isAuthenticated, async (req, res) => {
+  try {
+    const announcements = await Announcement.find({
+      status: "official",
+      postedByRole: { $in: ["admin", "mainAdmin"] },
+      isExpired: false,
+      "visibility.showInFeed": true
+    })
+      .populate("postedBy", "name role department profileImage")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(announcements);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+});
+
+/* =====================================================
+   GET Faculty Announcements (For Faculty Feed Page)
+   Logic: postedByRole === "faculty"
+===================================================== */
+router.get("/faculty", isAuthenticated, async (req, res) => {
+  try {
+    const announcements = await Announcement.find({
+      status: "official",
+      postedByRole: "faculty",
+      isExpired: false,
+      "visibility.showInFeed": true
+    })
+      .populate("postedBy", "name role department profileImage")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(announcements);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+});
+
+/* =====================================================
+   GET Student Announcements (For Student Feed Page)
+   Logic: postedByRole === "student"
+===================================================== */
+router.get("/student", isAuthenticated, async (req, res) => {
+  try {
+    const announcements = await Announcement.find({
+      status: "official",
+      postedByRole: "student",
+      isExpired: false,
+      "visibility.showInFeed": true
+    })
+      .populate("postedBy", "name role department profileImage")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(announcements);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+});
+
+/* =====================================================
    GET Official Announcements
    ?type=admin   → admin-posted, target=student
    ?type=student → student-approved posts
    ?type=faculty → admin-posted, target=faculty (for Faculty Dashboard)
    ?type=facultyPosts → faculty-posted, target=student (for Student Dashboard)
+   ?type=all → all official announcements
 ===================================================== */
 
-router.get("/official", async (req, res) => {
+router.get("/official", isAuthenticated, async (req, res) => {
   try {
     const { type } = req.query;
 
-    let filter = { status: "official" };
+    let filter = {
+      status: "official",
+      isExpired: false,
+      "visibility.showInFeed": true
+    };
 
     if (type === "student") {
       // Approved student-submitted posts
@@ -187,14 +304,27 @@ router.get("/official", async (req, res) => {
       // Faculty-posted announcements for students
       filter.postedByRole = "faculty";
       filter.target = "student";
+      // Feature 3: Filter by student department for faculty posts
+      if (req.user && req.user.role === "student") {
+        filter.$or = [
+          { targetDepartment: req.user.department },
+          { targetDepartment: { $exists: false } } // Compatibility for old ones
+        ];
+      }
+    } else if (type === "all") {
+      // Feature Fix: All official announcements for the main feed (from admin and faculty)
+      filter.status = "official";
+      filter.postedByRole = { $in: ["admin", "mainAdmin", "faculty"] };
+      filter.target = { $in: ["student", "all"] };
     } else {
-      // Default: admin-posted for students
-      filter.postedByRole = { $in: ["admin", "mainAdmin"] };
+      // Feature Fix: Default students feed now includes faculty broadcasts
+      filter.status = "official";
+      filter.postedByRole = { $in: ["admin", "mainAdmin", "faculty"] };
       filter.target = { $in: ["student", "all"] };
     }
 
     const announcements = await Announcement.find(filter)
-      .populate("postedBy", "name role department")
+      .populate("postedBy", "name role department profileImage")
       .sort({ createdAt: -1 });
 
     res.status(200).json(announcements);
@@ -211,7 +341,7 @@ router.get("/official", async (req, res) => {
 router.get("/my", isAuthenticated, async (req, res) => {
   try {
     const announcements = await Announcement.find({ postedBy: req.user._id })
-      .populate("postedBy", "name role department")
+      .populate("postedBy", "name role department profileImage")
       .sort({ createdAt: -1 });
 
     res.status(200).json(announcements);
@@ -238,6 +368,30 @@ router.get(
         .sort({ createdAt: -1 });
 
       res.status(200).json(pendingAnnouncements);
+
+    } catch (error) {
+      res.status(500).json({ message: "Server error", error });
+    }
+  }
+);
+
+/* =====================================================
+   ADMIN → Get Expired Announcements
+===================================================== */
+router.get(
+  "/expired",
+  isAuthenticated,
+  isAdmin,
+  async (req, res) => {
+    try {
+      const expiredAnnouncements = await Announcement.find({
+        status: "official",
+        isExpired: true
+      })
+        .populate("postedBy", "name email role")
+        .sort({ createdAt: -1 });
+
+      res.status(200).json(expiredAnnouncements);
 
     } catch (error) {
       res.status(500).json({ message: "Server error", error });
@@ -394,7 +548,11 @@ router.get("/trending", isAuthenticated, async (req, res) => {
   try {
     // Basic trending: mostly relying on recent announcements and aggregating likes + comments natively.
     // For simplicity, we fetch recent announcements (status official) and compute a score.
-    const announcements = await Announcement.find({ status: "official" })
+    const announcements = await Announcement.find({
+      status: "official",
+      isExpired: false,
+      "visibility.showInFeed": true
+    })
       .sort({ createdAt: -1 })
       .limit(30);
 
@@ -435,6 +593,77 @@ router.get("/:id/stats", isAuthenticated, async (req, res) => {
     const commentCount = await AnnouncementComment.countDocuments({ announcementId: req.params.id });
 
     res.status(200).json({ likeCount, commentCount, isLiked: !!isLiked });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+});
+
+/* =====================================================
+   GET Single Announcement by ID
+===================================================== */
+router.get("/:id", isAuthenticated, async (req, res) => {
+  try {
+    const announcement = await Announcement.findById(req.params.id)
+      .populate("postedBy", "name role department profileImage");
+    
+    if (!announcement) {
+      return res.status(404).json({ message: "Announcement not found" });
+    }
+
+    res.status(200).json(announcement);
+  } catch (error) {
+    res.status(500).json({ message: "Invalid ID or Server error", error });
+  }
+});
+
+/* =====================================================
+   SEARCH ENDPOINT
+===================================================== */
+router.get("/search", isAuthenticated, async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q) return res.status(200).json([]);
+
+    const query = {
+      status: "official",
+      isExpired: false,
+      "visibility.showInFeed": true,
+      $or: [
+        { title: { $regex: q, $options: "i" } },
+        { description: { $regex: q, $options: "i" } },
+        { venue: { $regex: q, $options: "i" } }
+      ]
+    };
+
+    const results = await Announcement.find(query)
+      .populate("postedBy", "name role department profileImage")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(results);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+});
+
+/* =====================================================
+   ADMIN → Restore Expired Announcement
+===================================================== */
+router.patch("/:id/restore", isAuthenticated, isAdmin, async (req, res) => {
+  try {
+    const updated = await Announcement.findByIdAndUpdate(
+      req.params.id,
+      { 
+        isExpired: false, 
+        "visibility.showInFeed": true 
+      },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Announcement not found" });
+    }
+
+    res.status(200).json({ message: "Announcement restored to feed successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }

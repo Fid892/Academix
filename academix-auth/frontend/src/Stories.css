@@ -1,0 +1,224 @@
+.stories-container {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 24px;
+}
+
+.stories-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Story Circle */
+.story-circle-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  width: 76px;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+.story-circle-wrapper:hover {
+  transform: scale(1.05);
+}
+
+.story-circle {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  padding: 3px; 
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.story-circle.unseen {
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+}
+
+.story-circle.seen {
+  background: var(--border-subtle);
+}
+
+.story-circle.add-story {
+  border: 2px dashed rgba(255,255,255,0.3);
+  background: transparent;
+}
+
+.story-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #000; /* Matching background */
+}
+
+.story-plus {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: #3b82f6;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #000;
+}
+
+.story-username {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-align: center;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Story Viewer */
+.story-viewer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #111; /* Dark theme */
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+}
+
+.story-progress-container {
+  display: flex;
+  gap: 4px;
+  padding: 16px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 2010;
+  box-sizing: border-box;
+}
+
+.story-progress-bar {
+  height: 2px;
+  background: rgba(255, 255, 255, 0.3);
+  flex: 1;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.story-progress-fill {
+  height: 100%;
+  background: #fff;
+  width: 0%;
+}
+
+.story-header {
+  position: absolute;
+  top: 24px;
+  left: 0;
+  width: 100%;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 2010;
+  box-sizing: border-box;
+}
+
+.story-user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: white;
+}
+
+.story-user-image {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.story-time {
+  opacity: 0.7;
+  font-size: 12px;
+}
+
+.story-close {
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.story-media-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: #000;
+}
+
+.story-media {
+  max-width: 100%;
+  max-height: 100vh;
+  object-fit: contain;
+}
+
+.story-caption {
+  position: absolute;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  text-align: center;
+  max-width: 80%;
+  font-size: 15px;
+  z-index: 2020;
+}
+
+.story-controls {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  z-index: 2005;
+}
+
+.story-prev, .story-next {
+  flex: 1;
+  height: 100%;
+}
+
+.story-delete {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  background: rgba(239, 68, 68, 0.8);
+  border: none;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  z-index: 2020;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

@@ -1,21 +1,22 @@
 import React, { useEffect, useState } from "react";
 import "./Dashboard.css";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import NotificationDropdown from "./NotificationDropdown";
 import AnnouncementCard from "./AnnouncementCard";
 import TrendingSection from "./TrendingSection";
-import { Plus, Users, Megaphone, Brain } from "lucide-react";
+import FeedCardNavigation from "./FeedCardNavigation";
+import AnnouncementModal from "./AnnouncementModal";
+import { Plus, Users, Megaphone, Brain, X, ClipboardList, MessageCircle } from "lucide-react";
 
 function Dashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const highlightId = new URLSearchParams(location.search).get("highlight");
+
   const [view, setView] = useState("dashboard");
   const [user, setUser] = useState(null);
-
   const [adminAnnouncements, setAdminAnnouncements] = useState([]);
-  const [studentAnnouncements, setStudentAnnouncements] = useState([]);
-  const [facultyAnnouncements, setFacultyAnnouncements] = useState([]);
-  const [myAnnouncements, setMyAnnouncements] = useState([]);
-
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -24,15 +25,73 @@ function Dashboard() {
     eventType: "Workshop",
     startDate: "",
     endDate: "",
+    expiryDate: "",
     registrationRequired: false,
     link: "",
-    coverImage: null
+    coverImage: null,
+    targetBadge: ""
   });
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData({ ...formData, [name]: type === "checkbox" ? checked : value });
+  };
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredAnnouncements, setFilteredAnnouncements] = useState([]);
 
   useEffect(() => {
     fetchUser();
-    loadAll();
+    fetchAdminFeed();
   }, []);
+
+  useEffect(() => {
+    if (!searchTerm) {
+      setFilteredAnnouncements(adminAnnouncements);
+    } else {
+      const filtered = adminAnnouncements.filter(a => 
+        a.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        (a.description || a.content)?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredAnnouncements(filtered);
+    }
+  }, [searchTerm, adminAnnouncements]);
+
+  useEffect(() => {
+    if (highlightId && !loading && filteredAnnouncements.length > 0) {
+      setTimeout(() => {
+        const element = document.getElementById(`announcement-${highlightId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+          
+          // Original styles to restore
+          const origShadow = element.style.boxShadow;
+          const origTransform = element.style.transform;
+          const origBorder = element.style.border;
+
+          // Apply highlight
+          element.style.transition = "all 0.5s cubic-bezier(0.16, 1, 0.3, 1)";
+          element.style.boxShadow = "0 0 30px rgba(59, 130, 246, 0.5)";
+          element.style.transform = "scale(1.02)";
+          element.style.border = "1px solid var(--accent-faculty)";
+          
+          setTimeout(() => {
+            element.style.boxShadow = origShadow;
+            element.style.transform = origTransform;
+            element.style.border = origBorder;
+          }, 3500); // Keeps highlighted for 3.5 seconds
+        } else {
+          // Edge case handling
+          const messageSpan = document.createElement("div");
+          messageSpan.innerText = "Highlighted announcement not found in your main feed.";
+          messageSpan.className = "share-toast";
+          messageSpan.style.top = "80px";
+          document.body.appendChild(messageSpan);
+          setTimeout(() => messageSpan.remove(), 3000);
+        }
+      }, 300); // 300ms delay to ensure DOM layout is complete
+    }
+  }, [highlightId, loading, filteredAnnouncements]);
 
   async function fetchUser() {
     try {
@@ -42,46 +101,15 @@ function Dashboard() {
     } catch { setUser(null); }
   }
 
-  const loadAll = async () => {
-    await Promise.all([loadOfficial(), loadStudentApproved(), loadFacultyPosts(), loadMine()]);
-  };
-
-  const loadOfficial = async () => {
+  async function fetchAdminFeed() {
     try {
-      const res = await fetch("http://localhost:5000/api/announcements/official?type=admin");
+      const res = await fetch("http://localhost:5000/api/announcements/admin", { credentials: "include" });
       const data = await res.json();
       setAdminAnnouncements(Array.isArray(data) ? data : []);
-    } catch { setAdminAnnouncements([]); }
-  };
-
-  const loadStudentApproved = async () => {
-    try {
-      const res = await fetch("http://localhost:5000/api/announcements/official?type=student");
-      const data = await res.json();
-      setStudentAnnouncements(Array.isArray(data) ? data : []);
-    } catch { setStudentAnnouncements([]); }
-  };
-
-  const loadFacultyPosts = async () => {
-    try {
-      const res = await fetch("http://localhost:5000/api/announcements/official?type=facultyPosts");
-      const data = await res.json();
-      setFacultyAnnouncements(Array.isArray(data) ? data : []);
-    } catch { setFacultyAnnouncements([]); }
-  };
-
-  const loadMine = async () => {
-    try {
-      const res = await fetch("http://localhost:5000/api/announcements/my", { credentials: "include" });
-      const data = await res.json();
-      setMyAnnouncements(Array.isArray(data) ? data : []);
-    } catch { setMyAnnouncements([]); }
-  };
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({ ...formData, [name]: type === "checkbox" ? checked : value });
-  };
+      setFilteredAnnouncements(Array.isArray(data) ? data : []);
+    } catch { setAdminAnnouncements([]); setFilteredAnnouncements([]); }
+    finally { setLoading(false); }
+  }
 
   const handleSubmit = async () => {
     if (!formData.title || !formData.description) return;
@@ -90,10 +118,16 @@ function Dashboard() {
       if (key === "coverImage") { if (formData.coverImage) form.append("image", formData.coverImage); }
       else { form.append(key, formData[key]); }
     });
-    await fetch("http://localhost:5000/api/announcements/student-request", { method: "POST", credentials: "include", body: form });
+
+    if (formData.targetBadge) {
+      await fetch("http://localhost:5000/api/announcement-requests", { method: "POST", credentials: "include", body: form });
+    } else {
+      await fetch("http://localhost:5000/api/announcements/student-request", { method: "POST", credentials: "include", body: form });
+    }
+
     setShowModal(false);
-    setFormData({ title: "", description: "", venue: "", eventType: "Workshop", startDate: "", endDate: "", registrationRequired: false, link: "", coverImage: null });
-    loadAll();
+    setFormData({ title: "", description: "", venue: "", eventType: "Workshop", startDate: "", endDate: "", expiryDate: "", registrationRequired: false, link: "", coverImage: null, targetBadge: "" });
+    fetchAdminFeed();
   };
 
   return (
@@ -110,6 +144,14 @@ function Dashboard() {
           <span className="sub-title" style={{ color: 'var(--accent-student)', fontWeight: 'bold', fontSize: '0.8rem', letterSpacing: '0.1em' }}>STUDENT PORTAL</span>
         </div>
         <div className="header-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button 
+            className="icon-btn" 
+            onClick={() => navigate("/messages")} 
+            style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center' }}
+            title="Messages"
+          >
+            <MessageCircle size={24} />
+          </button>
           <NotificationDropdown />
           <button className="logout-btn" onClick={() => { window.location.href = "http://localhost:5000/api/auth/logout"; }}>
             Sign Out
@@ -134,16 +176,22 @@ function Dashboard() {
               <p>Propose a new announcement for approval</p>
             </div>
 
-            <div className="dashboard-card animate-card-3" onClick={() => navigate("/study-groups")}>
+            <div className="dashboard-card animate-card-3" onClick={() => navigate("/chat")}>
+               <div className="plus-icon" style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white' }}><MessageCircle size={28} /></div>
+              <h3>Chatbox 💬</h3>
+              <p>Message and connect with other users</p>
+            </div>
+
+            <div className="dashboard-card animate-card-4" onClick={() => navigate("/study-groups")}>
                <div className="plus-icon" style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)', color: 'white' }}><Users size={28} /></div>
               <h3>Study Groups</h3>
               <p>Discuss, share notes and collaborate</p>
             </div>
 
-            <div className="dashboard-card animate-card-4" onClick={() => setView("student")}>
-              <div className="plus-icon" style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white' }}><Megaphone size={28} /></div>
-              <h3>Student Feed</h3>
-              <p>View community announcements</p>
+            <div className="dashboard-card animate-card-4" onClick={() => navigate("/doubts")}>
+               <div className="plus-icon" style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white' }}><Megaphone size={28} /></div>
+              <h3>Doubt System</h3>
+              <p>Resolve your academic questions</p>
             </div>
 
             <div className="dashboard-card animate-card-5" onClick={() => navigate("/smart-learning-hub")}>
@@ -151,79 +199,102 @@ function Dashboard() {
               <h3>Smart Learning Hub</h3>
               <p>Personalized resource recommendations</p>
             </div>
+
+            {user?.isBadgeAdmin && (
+              <div className="dashboard-card animate-card-6" onClick={() => navigate("/manage-announcements")}>
+                <div className="plus-icon" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white' }}><ClipboardList size={28} /></div>
+                <h3>Manage Requests</h3>
+                <p>Approve requests for {user.badgeName}</p>
+              </div>
+            )}
+
+            <FeedCardNavigation />
           </div>
 
           <TrendingSection />
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '48px' }}>
-             <section>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                   <h2 className="faculty-section-title" style={{ borderLeftColor: 'var(--accent-student)', margin: 0 }}>Official Notices</h2>
-                </div>
-                {adminAnnouncements.map((a, i) => (
-                  <div key={a._id} className="animate-fade-in-up" style={{ animationDelay: `${0.6 + i * 0.1}s`, opacity: 0, animationFillMode: 'forwards' }}>
-                    <AnnouncementCard a={a} />
+          <div className="main-feed-container" style={{ marginTop: "48px" }}>
+               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '20px' }}>
+                  <h2 className="faculty-section-title" style={{ borderLeftColor: 'var(--accent-faculty)', margin: 0 }}>Admin Announcements</h2>
+                  
+                  <div className="search-bar-wrapper" style={{ position: 'relative', width: '350px', maxWidth: '100%' }}>
+                     <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)', pointerEvents: 'none' }}>
+                        <Megaphone size={18} />
+                     </div>
+                     <input 
+                        type="text" 
+                        placeholder="Search by title or content..." 
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        style={{ 
+                           width: '100%', 
+                           padding: '12px 16px 12px 48px', 
+                           background: 'rgba(255,255,255,0.03)', 
+                           border: '1px solid var(--border-subtle)', 
+                           borderRadius: '12px',
+                           color: 'white',
+                           fontSize: '0.95rem',
+                           outline: 'none',
+                           transition: 'all 0.3s ease'
+                        }}
+                        onFocus={(e) => e.target.style.borderColor = 'var(--accent-faculty)'}
+                        onBlur={(e) => e.target.style.borderColor = 'var(--border-subtle)'}
+                     />
+                     {searchTerm && (
+                        <button 
+                           onClick={() => setSearchTerm("")}
+                           style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}
+                        >
+                           <X size={16} />
+                        </button>
+                     )}
                   </div>
-                ))}
-                {adminAnnouncements.length === 0 && <div className="faculty-empty">No official notices today.</div>}
-             </section>
-
-             <section>
-                <h2 className="faculty-section-title" style={{ borderLeftColor: 'var(--accent-faculty)', marginBottom: '32px' }}>Faculty Posting</h2>
-                {facultyAnnouncements.map((a, i) => (
-                  <div key={a._id} className="animate-fade-in-up" style={{ animationDelay: `${0.8 + i * 0.1}s`, opacity: 0, animationFillMode: 'forwards' }}>
-                    <AnnouncementCard a={a} showFacultyInfo />
-                  </div>
-                ))}
-                {facultyAnnouncements.length === 0 && <div className="faculty-empty">No faculty updates yet.</div>}
-             </section>
-          </div>
-        </>
-      )}
-
-      {view === "student" && (
-        <>
-          <div className="back-btn-container">
-            <button className="back-button" onClick={() => setView("dashboard")}>← Dashboard</button>
-          </div>
-          <h2 className="faculty-section-title" style={{ borderLeftColor: 'var(--accent-student)' }}>Student Community Feed</h2>
-          <div style={{ columns: '2', gap: '24px' }}>
-             {studentAnnouncements.map(a => <AnnouncementCard key={a._id} a={a} />)}
-          </div>
-          {studentAnnouncements.length === 0 && <div className="faculty-empty">The community feed is quiet right now.</div>}
-        </>
-      )}
-
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-box" style={{ maxWidth: '600px', width: '90%' }}>
-            <h2>New Announcement</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <input name="title" placeholder="Catchy Title *" value={formData.title} onChange={handleChange} />
-              <textarea name="description" placeholder="Provide full details..." rows={5} value={formData.description} onChange={handleChange} />
-              <input name="venue" placeholder="Venue / Location" value={formData.venue} onChange={handleChange} />
-              <input name="link" type="url" placeholder="Reference Link (External)" value={formData.link} onChange={handleChange} />
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <select name="eventType" value={formData.eventType} onChange={handleChange}>
-                  <option>Workshop</option><option>Seminar</option><option>Hackathon</option><option>Internship</option><option>Exam</option><option>General</option>
-                </select>
-                <input type="file" style={{ padding: '12px' }} onChange={(e) => setFormData({ ...formData, coverImage: e.target.files[0] })} />
-              </div>
-
-               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <input type="date" name="startDate" value={formData.startDate} onChange={handleChange} title="Start Date" />
-                  <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} title="End Date" />
                </div>
-            </div>
 
-            <div className="modal-actions" style={{ marginTop: '32px', display: 'flex', gap: '12px' }}>
-              <button className="secondary-btn" style={{ flex: 1 }} onClick={() => setShowModal(false)}>Discard</button>
-              <button className="primary-btn" style={{ flex: 2, background: 'var(--accent-student)' }} onClick={handleSubmit}>Request Approval</button>
-            </div>
+               {loading ? (
+                 <div style={{ textAlign: "center", padding: "40px", color: "var(--text-dim)" }}>Loading Admin Feed...</div>
+               ) : (filteredAnnouncements.length > 0 || searchTerm) ? (
+                 <>
+                   {filteredAnnouncements.length > 0 ? (
+                     <div className="feed-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '32px' }}>
+                      {filteredAnnouncements.map((a, i) => (
+                        <div key={a._id} className="animate-fade-in-up" style={{ animationDelay: `${0.2 + i * 0.05}s` }}>
+                          <AnnouncementCard a={a} currentUser={user} />
+                        </div>
+                      ))}
+                     </div>
+                   ) : (
+                     <div className="faculty-empty" style={{ padding: "60px", textAlign: "center", background: "rgba(255,255,255,0.02)", borderRadius: "16px", border: "1px dashed var(--border-subtle)" }}>
+                        <p style={{ color: 'var(--text-dim)', fontSize: '1.1rem' }}>🔍 No results found for "{searchTerm}"</p>
+                        <button onClick={() => setSearchTerm("")} style={{ marginTop: '12px', color: 'var(--accent-faculty)', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 'bold', textDecoration: 'underline' }}>Clear Search</button>
+                     </div>
+                   )}
+                 </>
+               ) : (
+                 <div className="faculty-empty" style={{ padding: "60px", textAlign: "center", background: "rgba(255,255,255,0.02)", borderRadius: "16px", border: "1px dashed var(--border-subtle)" }}>
+                    <p>No announcements available</p>
+                 </div>
+               )}
           </div>
-        </div>
+        </>
       )}
+
+      {/* community view can be removed or kept as a legacy, but I'll simplify it away for the main dashboard feed requirement */}
+      {view === "student" && (
+         <div style={{ textAlign: "center", padding: "50px" }}>
+            <button className="back-button" onClick={() => setView("dashboard")}>← Dashboard</button>
+            <p>This view is merged into the Main Feed.</p>
+         </div>
+      )}
+
+      <AnnouncementModal 
+        showModal={showModal} 
+        setShowModal={setShowModal} 
+        formData={formData} 
+        setFormData={setFormData} 
+        handleChange={handleChange} 
+        handleSubmit={handleSubmit} 
+      />
     </div>
   );
 }

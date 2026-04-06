@@ -37,9 +37,18 @@ passport.use(
             googleId: profile.id,
             role: allowedUser.role,
             department: allowedUser.department,
+            departmentId: allowedUser.departmentId,
             semester: allowedUser.semester,
             designation: allowedUser.designation
           });
+          console.log(`Created new user with departmentId: ${allowedUser.departmentId}`);
+        } else {
+          // If user exists, but doesn't have departmentId (migration case)
+          if (!user.departmentId && allowedUser.departmentId) {
+             user.departmentId = allowedUser.departmentId;
+             await user.save();
+             console.log(`Migrated existing user to departmentId: ${allowedUser.departmentId}`);
+          }
         }
 
         console.log("✅ Login success:", email, allowedUser.role);

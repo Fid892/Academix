@@ -14,6 +14,7 @@ const allowedUserSchema = new mongoose.Schema({
   },
   name: String,
   department: String,
+  departmentId: { type: mongoose.Schema.Types.ObjectId, ref: "Department" },
   semester: String,
   designation: String,
   createdByAdmin: {

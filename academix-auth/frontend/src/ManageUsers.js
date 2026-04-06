@@ -7,6 +7,7 @@ function ManageUsers() {
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [adminBadges, setAdminBadges] = useState([]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -20,7 +21,18 @@ function ManageUsers() {
   useEffect(() => {
     fetchUsers();
     fetchDepartments();
+    fetchAdminBadges();
   }, []);
+
+  const fetchAdminBadges = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/admin-badges");
+      const data = await res.json();
+      setAdminBadges(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Fetch admin badges error:", err);
+    }
+  };
 
   const fetchDepartments = async () => {
     try {
@@ -52,13 +64,18 @@ function ManageUsers() {
     if (user) {
       setEditMode(true);
       setSelectedUserId(user._id);
+      
+      const userBadge = adminBadges.find(b => b.email === user.email);
+
       setFormData({
         name: user.name || "",
         email: user.email || "",
         role: user.role || "student",
         department: user.department || "",
         semester: user.semester || "",
-        designation: user.designation || ""
+        designation: user.designation || "",
+        hasAdminBadge: !!userBadge,
+        badgeName: userBadge ? userBadge.badgeName : ""
       });
     } else {
       setEditMode(false);
@@ -68,7 +85,9 @@ function ManageUsers() {
         role: "student",
         department: "",
         semester: "",
-        designation: ""
+        designation: "",
+        hasAdminBadge: false,
+        badgeName: ""
       });
     }
     setShowModal(true);
@@ -77,6 +96,10 @@ function ManageUsers() {
   const handleSubmit = async () => {
     if (!formData.name || !formData.email || !formData.role) {
       alert("Please fill name, email and role");
+      return;
+    }
+    if (formData.hasAdminBadge && !formData.badgeName.trim()) {
+      alert("Please specify the Admin Badge Name");
       return;
     }
 
@@ -97,8 +120,30 @@ function ManageUsers() {
       const data = await res.json();
 
       if (res.ok) {
+        try {
+          if (formData.hasAdminBadge && formData.badgeName.trim()) {
+             await fetch("http://localhost:5000/api/admin-badges", {
+               method: "POST",
+               headers: { "Content-Type": "application/json" },
+               body: JSON.stringify({
+                  email: formData.email,
+                  name: formData.name,
+                  role: formData.role,
+                  badgeName: formData.badgeName.trim()
+               })
+             });
+          } else if (!formData.hasAdminBadge) {
+             await fetch(`http://localhost:5000/api/admin-badges/${formData.email}`, {
+               method: "DELETE"
+             });
+          }
+        } catch(e) {
+          console.error("Failed to update badge", e);
+        }
+
         setShowModal(false);
         fetchUsers();
+        fetchAdminBadges();
       } else {
         alert(data.message || "Operation failed");
       }
@@ -290,6 +335,30 @@ function ManageUsers() {
                   </div>
                 </div>
               )}
+
+              {/* Admin Badge Section */}
+              <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '8px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', color: '#fff', fontWeight: 'bold' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={formData.hasAdminBadge || false}
+                    onChange={(e) => setFormData({ ...formData, hasAdminBadge: e.target.checked })}
+                  />
+                  Assign Admin Privileges (Badge)
+                </label>
+
+                {formData.hasAdminBadge && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: '12px' }}>
+                    <label style={{ fontSize: "0.8rem", color: "var(--text-dim)", fontWeight: '700', textTransform: 'uppercase' }}>Admin Badge Name</label>
+                    <input 
+                      className="notice-input" 
+                      placeholder="e.g. IEEE Admin, Placement Cell Admin" 
+                      value={formData.badgeName || ""}
+                      onChange={(e) => setFormData({ ...formData, badgeName: e.target.value })}
+                    />
+                  </div>
+                )}
+              </div>
 
             </div>
 

@@ -13,9 +13,38 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 /* ============================
+   GET Doubts by User ID (Private to owner)
+============================ */
+router.get("/user/:userId", isAuthenticated, async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Security: only owner can see their own private list
+    if (req.user._id.toString() !== userId) {
+      return res.status(403).json({ message: "Unauthorized. Private section." });
+    }
+
+    const doubts = await Doubt.find({ postedBy: userId })
+      .populate("postedBy", "name role department")
+      .sort({ createdAt: -1 });
+
+    // Fetch reply counts for each doubt
+    const processedDoubtPromises = doubts.map(async (d) => {
+      const replyCount = await DoubtReply.countDocuments({ doubtId: d._id });
+      return { ...d.toObject(), replyCount };
+    });
+
+    const processedDoubts = await Promise.all(processedDoubtPromises);
+
+    res.status(200).json(processedDoubts);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+});
+
+/* ============================
    GET All Doubts
 ============================ */
-
 router.get("/", isAuthenticated, async (req, res) => {
   try {
     const doubts = await Doubt.find()

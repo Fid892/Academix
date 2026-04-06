@@ -19,10 +19,11 @@ router.post("/add-department", isAuthenticated, isAdmin, async (req, res) => {
   }
 });
 
-// Admin & Student: Get all Departments
+// Admin & Student: Get all Departments (List of Names)
 router.get("/list", isAuthenticated, async (req, res) => {
   try {
     const departments = await Department.find().sort({ name: 1 });
+    // Return full objects so IDs can be used
     res.json(departments);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -72,7 +73,7 @@ router.get("/:id", isAuthenticated, isAdmin, async (req, res) => {
 // Backward compatibility or other routes can be added here
 router.get("/", isAuthenticated, async (req, res) => {
   try {
-    const departments = await Department.find().sort({ createdAt: -1 });
+    const departments = await Department.find().sort({ name: 1 });
     res.json(departments);
   } catch (err) {
     res.status(500).json({ error: err.message });

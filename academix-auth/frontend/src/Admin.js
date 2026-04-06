@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import ManageGroups from "./ManageGroups";
 import ManageUsers from "./ManageUsers";
 import SocialActions from "./SocialActions";
-import { BarChart2, Megaphone, GraduationCap, Clock, Folder, Users, LogOut, Tag, MapPin, Calendar, Plus } from "lucide-react";
+import FacultyMessagesPage from "./FacultyMessagesPage";
+import { BarChart2, Megaphone, GraduationCap, Clock, Folder, Users, LogOut, Tag, MapPin, Calendar, Plus, MessagesSquare } from "lucide-react";
 
 function Admin() {
 
@@ -284,6 +285,14 @@ function Admin() {
             <Users size={18} style={{marginRight: '8px'}} /> User Management
           </li>
 
+          <li
+            className={activeSection === "faculty-messages" ? "active" : ""}
+            onClick={() => setActiveSection("faculty-messages")}
+            style={{ display: 'flex', alignItems: 'center' }}
+          >
+            <MessagesSquare size={18} style={{marginRight: '8px'}} /> Faculty Messages
+          </li>
+
           <li className="logout-btn" style={{ marginTop: 'auto', display: 'flex', alignItems: 'center' }} onClick={handleLogout}>
             <LogOut size={18} style={{marginRight: '8px'}} /> Logout
           </li>
@@ -434,6 +443,11 @@ function Admin() {
         {/* MANAGE USERS */}
         {activeSection === "management" && (
           <ManageUsers />
+        )}
+
+        {/* FACULTY MESSAGES */}
+        {activeSection === "faculty-messages" && (
+          <FacultyMessagesPage />
         )}
 
         {/* NOTICE MODAL */}

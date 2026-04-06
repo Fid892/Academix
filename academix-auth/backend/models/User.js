@@ -5,7 +5,8 @@ const userSchema = new mongoose.Schema({
   email: String,
   googleId: String,
   role: String,
-  department: String,
+  department: String, // UI Name
+  departmentId: { type: mongoose.Schema.Types.ObjectId, ref: "Department" },
   semester: String,
   designation: String,
   bio: {
@@ -44,6 +45,18 @@ const userSchema = new mongoose.Schema({
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: "StudyGroup"
+    }
+  ],
+  followers: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    }
+  ],
+  following: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
     }
   ],
   createdAt: {

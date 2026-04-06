@@ -487,3 +487,54 @@
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* Updated Profile Page Premium Styles */
+.profile-tabs-wrapper button:hover {
+  color: #fff !important;
+  opacity: 1 !important;
+}
+
+.doubt-summary-card:hover, .group-summary-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent-student) !important;
+  box-shadow: 0 12px 24px rgba(0,0,0,0.3);
+  background: rgba(255,255,255,0.06) !important;
+}
+
+.tab-content-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.profile-page-root {
+  animation: fadeIn 0.8s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Image Hover Effect */
+.profile-image-container img {
+  transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.profile-image-container:hover img {
+  transform: scale(1.05);
+}
+
+/* Stats Hover */
+.stat-item {
+  transition: transform 0.3s ease;
+  cursor: default;
+}
+
+.stat-item:hover {
+  transform: scale(1.1);
+}
+
+/* Create Post Button Gradient */
+.profile-create-btn {
+  background: linear-gradient(135deg, var(--accent-student), #b91c1c) !important;
+}

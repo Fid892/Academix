@@ -21,6 +21,39 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 /* ============================
+   GET Groups by User ID (Private to owner)
+============================ */
+router.get("/user/:userId", isAuthenticated, async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Security check: only profile owner can see their joined groups in this private view
+    if (req.user._id.toString() !== userId) {
+      return res.status(403).json({ message: "Unauthorized. Private section." });
+    }
+
+    const mongoose = require("mongoose");
+    const safeUserId = new mongoose.Types.ObjectId(userId);
+
+    const groups = await StudyGroup.find({
+      $or: [
+        { members: safeUserId },
+        { createdBy: safeUserId }
+      ]
+    })
+      .populate("createdBy", "name role")
+      .sort({ createdAt: -1 });
+
+    console.log("User ID:", userId);
+    console.log("Groups found:", groups.length);
+
+    res.status(200).json(groups);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+});
+
+/* ============================
    GET All Study Groups
 ============================ */
 
